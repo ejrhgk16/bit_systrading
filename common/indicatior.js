@@ -1,0 +1,231 @@
+/**
+ * DMI와 ADX 지표를 계산합니다. (캔들 데이터 기반)
+ * @param {Array} candles - K-line 데이터 배열. API 응답에서 `result.list`에 해당하며, reverse()된 상태여야 합니다 (오래된 데이터가 앞에).
+ * @param {number} period - 계산 기간 (일반적으로 14)
+ * @param {number} when - 0:당일 1:전날 2:이일전
+ * @returns {{adx: number, pdi: number, mdi: number} | null} - ADX, +DI, -DI 값
+ */
+function calculateDMI(candles, period, when) {
+  try {
+    if (!candles || candles.length < period + when) { // Ensure enough data for smoothing
+      console.error('DMI 계산을 위한 충분한 K-line 데이터가 없습니다.');
+      return null;
+    }
+
+    let upMoves = [];
+    let downMoves = [];
+    let trueRanges = [];
+
+    // 1. +DM, -DM, TR 계산
+    for (let i = 1; i < candles.length; i++) {
+      const current = candles[i];
+      const prev = candles[i - 1];
+
+      const currentHigh = parseFloat(current[2]);
+      const currentLow = parseFloat(current[3]);
+      const prevClose = parseFloat(prev[4]);
+      const prevHigh = parseFloat(prev[2]);
+      const prevLow = parseFloat(prev[3]);
+
+      const upMove = currentHigh - prevHigh;
+      const downMove = prevLow - currentLow;
+
+      const plusDM = (upMove > downMove && upMove > 0) ? upMove : 0;
+      const minusDM = (downMove > upMove && downMove > 0) ? downMove : 0;
+
+      upMoves.push(plusDM);
+      downMoves.push(minusDM);
+
+      const tr = Math.max(
+        currentHigh - currentLow,
+        Math.abs(currentHigh - prevClose),
+        Math.abs(currentLow - prevClose)
+      );
+      trueRanges.push(tr);
+    }
+
+    // 2. Wilder's Smoothing (지수 이동 평균과 유사)
+    const smooth = (arr, period) => {
+      let smoothed = [];
+      if (arr.length < period) return [];
+      let sum = arr.slice(0, period).reduce((acc, val) => acc + val, 0);
+      smoothed[period - 1] = sum;
+      for (let i = period; i < arr.length; i++) {
+        smoothed[i] = (smoothed[i - 1] - (smoothed[i - 1] / period)) + arr[i];
+      }
+      return smoothed;
+    };
+
+    const smoothedPlusDM = smooth(upMoves, period);
+    const smoothedMinusDM = smooth(downMoves, period);
+    const smoothedTR = smooth(trueRanges, period);
+
+    let pdiValues = []; // +DI
+    let mdiValues = []; // -DI
+    let dxValues = [];
+
+    // 3. +DI, -DI, DX 계산
+    for (let i = period - 1; i < smoothedTR.length; i++) {
+      if (smoothedTR[i] === 0) { // Prevent division by zero
+        pdiValues.push(0);
+        mdiValues.push(0);
+        dxValues.push(0);
+        continue;
+      }
+      const pdi = (smoothedPlusDM[i] / smoothedTR[i]) * 100;
+      const mdi = (smoothedMinusDM[i] / smoothedTR[i]) * 100;
+      pdiValues.push(pdi);
+      mdiValues.push(mdi);
+
+      const pdiPlusMdi = pdi + mdi;
+      if (pdiPlusMdi === 0) { // Prevent division by zero
+        dxValues.push(0);
+        continue;
+      }
+      const dx = (Math.abs(pdi - mdi) / pdiPlusMdi) * 100;
+      dxValues.push(dx);
+    }
+
+    // 4. ADX 계산 (DX의 이동 평균)
+    // 첫 ADX는 DX의 n-period 평균
+    let adxValues = [];
+    if (dxValues.length >= period) {
+      let firstAdxSum = 0;
+      for (let i = 0; i < period; i++) {
+        firstAdxSum += dxValues[i];
+      }
+      adxValues[period - 1] = firstAdxSum / period;
+
+      // 이후 ADX는 Wilder's Smoothing 적용
+      for (let i = period; i < dxValues.length; i++) {
+        adxValues[i] = (adxValues[i - 1] * (period - 1) + dxValues[i]) / period;
+      }
+    }
+    
+    // 마지막 값 반환
+    const pdiMdiIndex = dxValues.length - 1;
+    const adxIndex = adxValues.length - 1;
+
+    if (adxIndex < when || pdiMdiIndex < when) {
+        console.error('ADX/DMI 계산 결과가 요청된 "when" 값보다 적습니다.');
+        return null;
+    }
+    
+    return {
+      adx: adxValues[adxIndex - when],
+      pdi: pdiValues[pdiMdiIndex - when],
+      mdi: mdiValues[pdiMdiIndex - when],
+    };
+
+  } catch (error) {
+    console.error('DMI 계산 중 오류 발생:', error);
+    return null;
+  }
+}
+
+/**
+ * 볼린저 밴드(Bollinger Bands)를 계산합니다. (캔들 데이터 기반)
+ * @param {Array} candles - K-line 데이터 배열. API 응답에서 `result.list`에 해당하며, reverse()된 상태여야 합니다 (오래된 데이터가 앞에).
+ * @param {number} period - 이동 평균 기간 (일반적으로 20)
+ * @param {number} multiplier - 표준 편차에 곱할 값 (일반적으로 2)
+ * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
+ * @returns {{upper: number, middle: number, lower: number} | null} - 볼린저 밴드 상단, 중간, 하단 값
+ */
+function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
+  try {
+    if (!candles || candles.length < period) { // Need at least 'period' candles to start
+      console.error('BB 계산을 위한 충분한 K-line 데이터가 없습니다.');
+      return null;
+    }
+
+    const closes = candles.map(c => parseFloat(c[4]));
+    let bbResults = [];
+
+    for (let i = period - 1; i < closes.length; i++) {
+      const currentWindow = closes.slice(i - period + 1, i + 1);
+
+      // 1. 중간선 (Simple Moving Average)
+      const sum = currentWindow.reduce((acc, val) => acc + val, 0);
+      const middle = sum / period;
+
+      // 2. 표준 편차 (Standard Deviation)
+      const variance = currentWindow.reduce((acc, val) => acc + Math.pow(val - middle, 2), 0) / period;
+      const stdDev = Math.sqrt(variance);
+
+      // 3. 상단선 및 하단선
+      const upper = middle + (stdDev * multiplier);
+      const lower = middle - (stdDev * multiplier);
+
+      bbResults.push({ upper, middle, lower });
+    }
+
+    // 마지막 값 반환
+    const lastIndex = bbResults.length - 1;
+    if (lastIndex < when) {
+        console.error('BB 계산 결과가 요청된 "when" 값보다 적습니다.');
+        return null;
+    }
+    return bbResults[lastIndex - when];
+
+  } catch (error) {
+    console.error('BB 계산 중 오류 발생:', error);
+    return null;
+  }
+}
+
+/**
+ * EMA (지수 이동 평균)를 계산합니다.
+ * @param {Array} candles - K-line 데이터 배열. 오래된 데이터가 앞에 오도록 정렬되어 있어야 합니다.
+ * @param {number} period - 계산 기간
+ * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
+ * @returns {number | null} - EMA 값
+ */
+function calculateEMA(candles, period, when = 0) {
+  try {
+    // 'period'개의 EMA를 계산하고, 'when'번째 전의 값을 보려면 최소 period + when 개의 데이터가 필요합니다.
+    if (!candles || candles.length < period + when) {
+      console.error(`EMA 계산을 위한 충분한 캔들 데이터가 없습니다. (필요: ${period + when}, 확보: ${candles.length})`);
+      return null;
+    }
+
+    // 전체 종가 데이터를 추출합니다.
+    const closes = candles.map(c => parseFloat(c[4]));
+
+    const multiplier = 2 / (period + 1);
+    let emaValues = [];
+
+    // 첫 EMA는 단순 이동 평균 (SMA)으로 시작합니다.
+    let sum = 0;
+    for (let i = 0; i < period; i++) {
+      sum += closes[i];
+    }
+    emaValues[period - 1] = sum / period;
+
+    // 이후 EMA를 순차적으로 계산합니다.
+    for (let i = period; i < closes.length; i++) {
+      emaValues[i] = (closes[i] - emaValues[i - 1]) * multiplier + emaValues[i - 1];
+    }
+
+    // 요청된 'when'에 해당하는 EMA 값을 반환합니다.
+    const lastIndex = emaValues.length - 1;
+    
+    // 반환하려는 인덱스가 유효한지 확인합니다.
+    if (lastIndex < when) {
+        console.error(`EMA 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
+        return null;
+    }
+    
+    // 마지막 인덱스에서 'when'만큼 이전의 값을 반환합니다.
+    return emaValues[lastIndex - when];
+
+  } catch (error) {
+    console.error('EMA 계산 중 오류 발생:', error);
+    return null;
+  }
+}
+
+module.exports = {
+    calculateDMI,
+    calculateBB,
+    calculateEMA
+};
