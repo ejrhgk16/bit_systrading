@@ -55,7 +55,7 @@ class alogo2{
         this.orderId_exit_1 = 'algo2_'+this.symbol+'_exit_1'
         this.orderId_exit_2 = 'algo2_'+this.symbol+'_exit_2'
 
-        this.capital = Number(process.env[this.symbol+"_captial"])
+        this.capital = Number(process.env["algo2_"+this.symbol+"_captial"])
 
         const docId = this.getTradeStatusDocId();
         const data = await getTradeStatus(docId)
