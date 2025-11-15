@@ -2,6 +2,7 @@ require('dotenv').config();
 // Import the functions you need from the SDKs you need
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
+const { getAuth } = require("firebase/auth"); // Firebase Auth 임포트 추가
 
 // TODO: Add your own Firebase configuration here
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -21,4 +22,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 
-module.exports = { db };
+// Initialize Firebase Authentication and get a reference to the service
+const auth = getAuth(app); // auth 객체 초기화 추가
+
+// db와 auth를 함께 내보내기
+module.exports = { db, auth };

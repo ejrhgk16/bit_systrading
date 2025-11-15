@@ -6,25 +6,51 @@ const alogo2 = require('./alogs/alog2Class.js');
 const { fileLogger, consoleLogger } = require('./common/logger.js'); // 로거 import
 const cron = require('node-cron');
 
-const alogo2_btc = new alogo2(symbol = 'BTCUSDT', decimalPlaces_qty = 1, decimalPlaces_price = 2);
-const alogo2_eth = new alogo2(symbol = 'ETHUSDT', decimalPlaces_qty = 1, decimalPlaces_price = 2);
-const alogo2_sol = new alogo2(symbol = 'SOLUSDT', decimalPlaces_qty = 1, decimalPlaces_price = 2);
+const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT'];
 
-const alog2Objs = {
-  BTCUSDT : alogo2_btc,
-  ETHUSDT : alogo2_eth,
-  SOLUSDT : alogo2_sol,
-}
 
-await Promise.all(alogo2_btc.set(), alogo2_eth.set(), alogo2_sol.set())
+const alog2Objs = symbols.reduce((acc, symbol) => {
+  acc[symbol] = new alogo2(symbol, 1, 2);
+  return acc;
+}, {});
 
+await Promise.all(Object.values(alog2Objs).map(obj => obj.set()));
 
 async function main(){//웹소켓 셋 및 스케줄링
 
+    // --- 1. Firebase 인증 ---
+  // 앱의 다른 어떤 로직보다 먼저 인증을 실행합니다.
+  try {
+    consoleLogger.info("Firebase 로그인을 시도합니다...");
+    const email = process.env.FIREBASE_USER_EMAIL;
+    const password = process.env.FIREBASE_USER_PASSWORD;
+
+    // .env 파일에 사용자 이메일과 비밀번호가 있는지 확인합니다.
+    if (!email || !password) {
+      throw new Error("FIREBASE_USER_EMAIL과 FIREBASE_USER_PASSWORD를 .env 파일에 설정해야 합니다.");
+    }
+    
+    // 이메일과 비밀번호로 로그인을 시도합니다.
+    await signInWithEmailAndPassword(auth, email, password);
+    consoleLogger.info("Firebase 로그인에 성공했습니다!");
+
+  } catch (error) {
+    consoleLogger.error("Firebase 인증에 실패했습니다. .env 파일과 Firebase 프로젝트 설정을 확인해주세요.", error);
+    process.exit(1); // 인증에 실패하면 앱을 종료합니다.
+  }
+
+
   
   cron.schedule('0 * * * *', async () => { // 매시간마다
-    Promise.all(alogo2_btc.scheduleFunc(), alogo2_eth.scheduleFunc(), alogo2_sol.scheduleFunc())
-
+    try {
+      consoleLogger.info("cron 0 * * * * 실행");
+      await Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));
+      consoleLogger.info("cron 0 * * * * 완료");
+    }catch (error) {
+      // scheduleFunc 중 하나라도 실패하면 에러가 여기서 잡힙니다.
+      consoleLogger.error("cron 0 * * * * 오류발생:", error);
+      fileLogger.error("cron 0 * * * * 오류발생:", error);
+    }
   }, {
     timezone: 'UTC'
   });

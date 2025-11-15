@@ -32,7 +32,7 @@ const fileLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
     new winston.transports.File({ filename: `../logs/app-${getTodayDate()}.log` }) // logs/ 폴더 안에 현재 날짜를 포함한 파일명 사용
@@ -64,7 +64,7 @@ const consoleLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `${info.timestamp} ${info.level} : ${info.message}`)
+    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
     new winston.transports.Console() // 콘솔에 출력
