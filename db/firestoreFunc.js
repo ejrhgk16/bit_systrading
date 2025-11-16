@@ -1,6 +1,7 @@
 const { db } = require('./firebaseConfig.js');
 // getDoc, setDoc 추가 및 serverTimestamp를 require로 변경
 const { collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp } = require('firebase/firestore');
+const { consoleLogger } = require('../common/logger.js');
 
 async function getTradeStatus(docId){
     try {
@@ -11,7 +12,7 @@ async function getTradeStatus(docId){
             return null
         }
     }catch(e){
-        console.error("Error getting documents: ", e);
+        consoleLogger.error(`Error getting documents: ${JSON.stringify(e)}`);
     }
 }
 
@@ -22,7 +23,7 @@ async function setTradeStatus(documentId, data, merge = true) { // merge 기본�
         await setDoc(docRef, data, { merge: merge });
         return true;
     } catch (e) {
-        console.error("Error setting document: ", e);
+        consoleLogger.error(`Error setting document: ${JSON.stringify(e)}`);
         return false;
     }
 }
@@ -37,7 +38,7 @@ async function addTradeLog(data) {
     // console.log("Document written with ID: ", docRef.id); // 성공 로그는 일단 주석 처리
     return docRef.id;
   } catch (e) {
-    console.error("Error adding document: ", e);
+    consoleLogger.error(`Error adding document: ${JSON.stringify(e)}`);
   }
 }
 

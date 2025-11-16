@@ -1,4 +1,5 @@
 const {rest_client} = require('./client');
+const { consoleLogger } = require('./logger');
 
 async function getWeeklyOpen(symbol){
     try {
@@ -20,12 +21,11 @@ async function getWeeklyOpen(symbol){
   
       } else {
         const dataPointCount = response.result && response.result.list ? response.result.list.length : 0;
-        console.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}.`);
-        console.error('API Response Message:', response.retMsg);
+        consoleLogger.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}. API Response Message: ${response.retMsg}`);
       }
     
     } catch (error) {
-      console.error('An error occurred:', error);
+      consoleLogger.error(`An error occurred in getWeeklyOpen: ${JSON.stringify(error)}`);
     }
     
   
@@ -34,7 +34,7 @@ async function getWeeklyOpen(symbol){
   
   async function getWeeklyMovingAverage(symbol, limit) {
     try {
-      console.log('Fetching weekly kline data for moving average...');
+      consoleLogger.info('Fetching weekly kline data for moving average...');
   
       // 5주 이동평균을 위해 최근 6개의 주봉 데이터를 요청합니다.
       const response = await rest_client.getKline({
@@ -59,25 +59,23 @@ async function getWeeklyOpen(symbol){
         // 이동평균을 계산합니다.
         const movingAverage = sumOfCloses / limit;
   
-        console.log(`Calculation based on previous 5 weeks.`);
-        console.log(`Closing prices used: [${closingPrices.join(', ')}]`);
-        console.log(`5-Week Moving Average: ${movingAverage.toFixed(2)}`); // 소수점 2자리까지 표시
+        consoleLogger.info(`Calculation based on previous 5 weeks. Closing prices used: [${closingPrices.join(', ')}]`);
+        consoleLogger.info(`5-Week Moving Average: ${movingAverage.toFixed(2)}`); // 소수점 2자리까지 표시
   
         return movingAverage
   
       } else {
         const dataPointCount = response.result && response.result.list ? response.result.list.length : 0;
-        console.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}.`);
-        console.error('API Response Message:', response.retMsg);
+        consoleLogger.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}. API Response Message: ${response.retMsg}`);
       }
     } catch (error) {
-      console.error('An error occurred:', error);
+      consoleLogger.error(`An error occurred in getWeeklyMovingAverage: ${JSON.stringify(error)}`);
     }
   }
   
   async function getWeeklyOpenCloseDifference(symbol, limit) {
     try {
-      console.log('Fetching weekly kline data for moving average...');
+      consoleLogger.info('Fetching weekly kline data for moving average...');
   
       // 5주 이동평균을 위해 최근 6개의 주봉 데이터를 요청합니다.
       const response = await rest_client.getKline({
@@ -106,11 +104,10 @@ async function getWeeklyOpen(symbol){
   
       } else {
         const dataPointCount = response.result && response.result.list ? response.result.list.length : 0;
-        console.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}.`);
-        console.error('API Response Message:', response.retMsg);
+        consoleLogger.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}. API Response Message: ${response.retMsg}`);
       }
     } catch (error) {
-      console.error('An error occurred:', error);
+      consoleLogger.error(`An error occurred in getWeeklyOpenCloseDifference: ${JSON.stringify(error)}`);
     }
   }
   
@@ -158,18 +155,16 @@ async function getWeeklyOpen(symbol){
    */
   async function getStrikes(baseCoin, expirationDate) {
       try {
-          console.log(`${baseCoin}-${expirationDate} 만기일의 행사가를 조회합니다...`);
+          consoleLogger.info(`${baseCoin}-${expirationDate} 만기일의 행사가를 조회합니다...`);
           const response = await rest_client.getTickers({
               category: 'option',
               baseCoin : baseCoin,
               expDate : expirationDate
           });
-          // console.log(response.result.list)
   
           if (response.retCode === 0 && response.result && response.result.list) {
               const strikes = new Set();
               response.result.list.forEach(item => {
-                  // 티커 형식: BTC-12SEP25-109500-P-USDT
                   const parts = item.symbol.split('-');
                   if (parts.length === 5 && parts[1] === expirationDate) {
                       strikes.add(parseFloat(parts[2]));
@@ -177,19 +172,19 @@ async function getWeeklyOpen(symbol){
               });
   
               if (strikes.size === 0) {
-                  console.warn(`경고: ${expirationDate} 만기일에 해당하는 옵션이 없습니다.`);
+                  consoleLogger.warn(`경고: ${expirationDate} 만기일에 해당하는 옵션이 없습니다.`);
                   return [];
               }
               
               const sortedStrikes = Array.from(strikes).sort((a, b) => a - b); 
-              console.log(`조회된 행사가 수: ${sortedStrikes.length}`);
+              consoleLogger.info(`조회된 행사가 수: ${sortedStrikes.length}`);
               return sortedStrikes;
           } else {
-              console.error('옵션 티커 정보를 가져오는데 실패했습니다:', response.retMsg); 
+              consoleLogger.error(`옵션 티커 정보를 가져오는데 실패했습니다: ${response.retMsg}`); 
               return null;
           }
       } catch (error) {
-          console.error('getStrikePrices 함수에서 오류 발생:', error);
+          consoleLogger.error(`getStrikePrices 함수에서 오류 발생: ${JSON.stringify(error)}`);
           return null;
       }
   }  
@@ -203,13 +198,11 @@ async function getWeeklyOpen(symbol){
    */
   function findClosestStrike(targetPrice, strikePrices) {
     if (!strikePrices || strikePrices.length === 0) {
-      console.error("행사가 목록(strikePrices)이 비어있습니다.");
+      consoleLogger.error("행사가 목록(strikePrices)이 비어있습니다.");
       return null;
     }
   
-    // reduce를 사용하여 가장 차이가 적은 값을 찾습니다.
     const closest = strikePrices.reduce((prev, curr) => {
-      // 현재 값과 타겟의 차이가 이전 값과 타겟의 차이보다 작으면 현재 값을 채택
       return (Math.abs(curr - targetPrice) < Math.abs(prev - targetPrice) ? curr : prev);
     });
   
@@ -236,12 +229,11 @@ async function getKline(symbol, interval, limit) {
     if (response.retCode === 0 && response.result && response.result.list && response.result.list.length > 0) {
       return response.result.list.reverse(); // 오래된 데이터가 앞에 오도록 뒤집음
     } else {
-      console.error(`K-line 데이터를 가져오지 못했습니다 for ${symbol}. 필요한 데이터 수: ${limit}, 받은 데이터 수: ${response.result?.list?.length || 0}`);
-      console.error('API 응답 메시지:', response.retMsg);
+      consoleLogger.error(`K-line 데이터를 가져오지 못했습니다 for ${symbol}. 필요한 데이터 수: ${limit}, 받은 데이터 수: ${response.result?.list?.length || 0}. API 응답 메시지: ${response.retMsg}`);
       return null;
     }
   } catch (error) {
-    console.error('K-line 데이터 조회 중 오류 발생:', error);
+    consoleLogger.error(`K-line 데이터 조회 중 오류 발생: ${JSON.stringify(error)}`);
     return null;
   }
 }

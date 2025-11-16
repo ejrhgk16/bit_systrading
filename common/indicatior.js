@@ -1,3 +1,5 @@
+const { consoleLogger } = require('./logger');
+
 /**
  * DMI와 ADX 지표를 계산합니다. (캔들 데이터 기반)
  * @param {Array} candles - K-line 데이터 배열. API 응답에서 `result.list`에 해당하며, reverse()된 상태여야 합니다 (오래된 데이터가 앞에).
@@ -8,7 +10,7 @@
 function calculateDMI(candles, period, when) {
   try {
     if (!candles || candles.length < period + when) { // Ensure enough data for smoothing
-      console.error('DMI 계산을 위한 충분한 K-line 데이터가 없습니다.');
+      consoleLogger.error('DMI 계산을 위한 충분한 K-line 데이터가 없습니다.');
       return null;
     }
 
@@ -107,7 +109,7 @@ function calculateDMI(candles, period, when) {
     const adxIndex = adxValues.length - 1;
 
     if (adxIndex < when || pdiMdiIndex < when) {
-        console.error('ADX/DMI 계산 결과가 요청된 "when" 값보다 적습니다.');
+        consoleLogger.error(`ADX/DMI 계산 결과가 요청된 "when" 값보다 적습니다.`);
         return null;
     }
     
@@ -118,7 +120,7 @@ function calculateDMI(candles, period, when) {
     };
 
   } catch (error) {
-    console.error('DMI 계산 중 오류 발생:', error);
+    consoleLogger.error(`DMI 계산 중 오류 발생: ${JSON.stringify(error)}`);
     return null;
   }
 }
@@ -134,7 +136,7 @@ function calculateDMI(candles, period, when) {
 function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
   try {
     if (!candles || candles.length < period) { // Need at least 'period' candles to start
-      console.error('BB 계산을 위한 충분한 K-line 데이터가 없습니다.');
+      consoleLogger.error('BB 계산을 위한 충분한 K-line 데이터가 없습니다.');
       return null;
     }
 
@@ -162,13 +164,13 @@ function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
     // 마지막 값 반환
     const lastIndex = bbResults.length - 1;
     if (lastIndex < when) {
-        console.error('BB 계산 결과가 요청된 "when" 값보다 적습니다.');
+        consoleLogger.error(`BB 계산 결과가 요청된 "when" 값보다 적습니다.`);
         return null;
     }
     return bbResults[lastIndex - when];
 
   } catch (error) {
-    console.error('BB 계산 중 오류 발생:', error);
+    consoleLogger.error(`BB 계산 중 오류 발생: ${JSON.stringify(error)}`);
     return null;
   }
 }
@@ -184,7 +186,7 @@ function calculateEMA(candles, period, when = 0) {
   try {
     // 'period'개의 EMA를 계산하고, 'when'번째 전의 값을 보려면 최소 period + when 개의 데이터가 필요합니다.
     if (!candles || candles.length < period + when) {
-      console.error(`EMA 계산을 위한 충분한 캔들 데이터가 없습니다. (필요: ${period + when}, 확보: ${candles.length})`);
+      consoleLogger.error(`EMA 계산을 위한 충분한 캔들 데이터가 없습니다. (필요: ${period + when}, 확보: ${candles.length})`);
       return null;
     }
 
@@ -211,7 +213,7 @@ function calculateEMA(candles, period, when = 0) {
     
     // 반환하려는 인덱스가 유효한지 확인합니다.
     if (lastIndex < when) {
-        console.error(`EMA 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
+        consoleLogger.error(`EMA 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
         return null;
     }
     
@@ -219,7 +221,7 @@ function calculateEMA(candles, period, when = 0) {
     return emaValues[lastIndex - when];
 
   } catch (error) {
-    console.error('EMA 계산 중 오류 발생:', error);
+    consoleLogger.error(`EMA 계산 중 오류 발생: ${JSON.stringify(error)}`);
     return null;
   }
 }

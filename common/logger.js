@@ -29,7 +29,7 @@ const customLevels = {
     error: 'red',
     warn: 'yellow',
     info: 'green',
-    order: 'magenta', // 'order' 레벨에 마젠타 색상 지정
+    order: 'cyan', // 'aqua'에서 'cyan'으로 수정
     debug: 'blue',
    }
 };
@@ -44,7 +44,7 @@ const fileLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `[${info.timestamp} ${info.level.toUpperCase()}] ${info.message}`)
+    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
     new winston.transports.File({ filename: `logs/app-${getTodayDate()}.log` })
@@ -60,7 +60,7 @@ const consoleLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `[${info.timestamp} ${info.level.toUpperCase()}] ${info.message}`)
+    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
     new winston.transports.Console() // 콘솔에 출력

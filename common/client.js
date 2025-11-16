@@ -2,9 +2,9 @@ require('dotenv').config();
 const { RestClientV5, WebsocketClient, WebsocketAPIClient, WS_KEY_MAP } = require('bybit-api');
 const {fileLogger} = require('./logger')
 
-const key = process.env.BYBIT_API_KEY_DEMO
-const secret = process.env.BYBIT_API_SECRET_DEMO
-const isDemo = true
+const key = process.env.BYBIT_API_KEY
+const secret = process.env.BYBIT_API_SECRET
+const isDemo = false
 
 const rest_client = new RestClientV5({
     key: key,

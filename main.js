@@ -28,7 +28,7 @@ async function main(){//웹소켓 셋 및 스케줄링
     consoleLogger.info("Firebase 로그인에 성공했습니다!");
 
   } catch (error) {
-    consoleLogger.error("Firebase 인증에 실패했습니다. .env 파일과 Firebase 프로젝트 설정을 확인해주세요.", error);
+    consoleLogger.error(`Firebase 인증에 실패했습니다. .env 파일과 Firebase 프로젝트 설정을 확인해주세요: ${JSON.stringify(error)}`);
     process.exit(1); // 인증에 실패하면 앱을 종료합니다.
   }
 
@@ -47,8 +47,9 @@ async function main(){//웹소켓 셋 및 스케줄링
       consoleLogger.info("cron 0 * * * * 완료");
     }catch (error) {
       // scheduleFunc 중 하나라도 실패하면 에러가 여기서 잡힙니다.
-      consoleLogger.error("cron 0 * * * * 오류발생:", error);
-      fileLogger.error("cron 0 * * * * 오류발생:", error);
+      const errorMessage = `cron 0 * * * * 오류발생: ${JSON.stringify(error)}`;
+      consoleLogger.error(errorMessage);
+      fileLogger.error(errorMessage);
     }
   }, {
     timezone: 'UTC'
@@ -87,29 +88,35 @@ async function main(){//웹소켓 셋 및 스케줄링
   });
 
   ws_client.on('open', ({ wsKey, event }) => {
-    console.log('connection open for websocket with ID: ', wsKey);
+    consoleLogger.info(`connection open for websocket with ID: ${wsKey}`);
   });
 
 
   ws_client.on('response', (response) => {
-    console.log('response', response);
+    consoleLogger.info(`response: ${JSON.stringify(response)}`);
   });
 
 
   ws_client.on('close', () => {
-    console.log('connection closed');
+    consoleLogger.warn('connection closed');
   });
 
   ws_client.on('exception', (err) => {
-    console.error('exception', err);
+    const errorMessage = `exception: ${JSON.stringify(err)}`;
+    consoleLogger.error(errorMessage);
+    fileLogger.error(errorMessage);
   });
 
   ws_client.on('reconnect', ({ wsKey }) => {
-    console.log('ws automatically reconnecting.... ', wsKey);
+    const message = `ws automatically reconnecting.... ${wsKey}`;
+    consoleLogger.info(message);
+    fileLogger.info(message);
   });
 
   ws_client.on('reconnected', (data) => {
-    console.log('ws has reconnected ', data?.wsKey);
+    const message = `ws has reconnected ${data?.wsKey}`;
+    consoleLogger.info(message);
+    fileLogger.info(message);
   });
 }
 
