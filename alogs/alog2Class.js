@@ -8,10 +8,10 @@ const {fileLogger, consoleLogger} = require('../common/logger')
 
 class alogo2{
 
-    constructor(symbol, decimalPlaces_qty = 1, decimalPlaces_price = 2) {
+    constructor(symbol) {
 
-        this.qtyMultiplier = Math.pow(10, decimalPlaces_qty); // 수량설정을 위한 소수점 자릿수에 따른 승수
-        this.priceMultiplier = Math.pow(10, decimalPlaces_price)
+        this.qtyMultiplier = 0// 수량설정을 위한 소수점 자릿수에 따른 승수
+        this.priceMultiplier = 0
 
         this.symbol = symbol;
         this.capital = 0.0;// 할당된 자금 설정필요
@@ -50,24 +50,30 @@ class alogo2{
     }
 
     async set(){
+        
+        const decimalPlaces_qty = Number(process.env[this.symbol+"_decimal_qty"])
+        const decimalPlaces_price = Number(process.env[this.symbol+"_decimal_price"])
+
+        this.qtyMultiplier = Math.pow(10, decimalPlaces_qty); // 수량설정을 위한 소수점 자릿수에 따른 승수
+        this.priceMultiplier = Math.pow(10, decimalPlaces_price)
 
         this.orderId_open = 'algo2_'+this.symbol+'_open'
         this.orderId_exit_1 = 'algo2_'+this.symbol+'_exit_1'
         this.orderId_exit_2 = 'algo2_'+this.symbol+'_exit_2'
 
-        this.capital = Number(process.env["algo2_"+this.symbol+"_captial"])
+        this.capital = Number(process.env["algo2_"+this.symbol+"_capital"])
 
         const docId = this.getTradeStatusDocId();
         const data = await getTradeStatus(docId)
         if(data){
             Object.assign(this, data);
-            await doubleCheckStatus()
+            await this.doubleCheckStatus()
         }else{
             const alog2State = { ...this };
             await setTradeStatus(docId, alog2State)
             
         }
-        consoleLogger.info(this.symbol + '초기 설정 완료')
+        consoleLogger.info(this.symbol + ' 초기 설정 완료')
         
     }
 
@@ -287,8 +293,8 @@ class alogo2{
             this.isOpenOrderFilled = true
             await this.openOrderFilledCallback()
         }
-        if(this.orderId_exit_1 == orderLinkId){
-            this.isPartialExit == true
+        if(this.orderId_exit_1 == dataObj.orderLinkId){
+            this.isPartialExit = true
             this.exit_price_1 = dataObj.avgPrice
         }
 
