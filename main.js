@@ -73,8 +73,8 @@ async function main(){//웹소켓 셋 및 스케줄링
     //res.data 배열임
 
     if(res?.topic == "order"){
-      const data = res.data // 배열
-      data.array.forEach(element => {
+      const data = res?.data // 배열
+      data.forEach(element => {
 
         const symbol = element.symbol
         const alog2ObjTemp = alog2Objs[symbol]

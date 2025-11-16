@@ -21,7 +21,7 @@ class alogo2{
         this.orderSize = 0.0 // 주문 수량
 
         this.orderPrice = 0.0;
-        this.entryPrice = 0.0;
+
 
         this.exit_price_1 = 0.0
         this.exit_price_2 = 0.0
@@ -33,9 +33,6 @@ class alogo2{
         this.orderId_exit_1 = null//링크아이디로내가 설정해서 저장
         this.orderId_exit_2 = null//링크아이디로내가 설정해서 저장
 
-        // this.entryPrice = 0.0 
-        // this.entrySize = 0.0 // 체결된 수량
-    
         this.positionType = null;//long short null
         this.isOpenOrderFilled = false
         this.isPartialExit = false;// 부분익절 여부
@@ -258,7 +255,6 @@ class alogo2{
         this.exit_size_2 = 0.0
 
         this.openPrice = 0.0
-        this.entryPrice = 0.0
 
         this.positionType = null
 
@@ -289,13 +285,13 @@ class alogo2{
         consoleLogger.order(`${this.symbol} ${dataObj.orderLinkId} 체결 -- side : ${dataObj.side}, price : ${dataObj.price}, qty : ${dataObj.qty} `);
 
         if(this.orderId_open == dataObj.orderLinkId){
-            this.entryPrice = dataObj.avgPrice
+
             this.isOpenOrderFilled = true
             await this.openOrderFilledCallback()
         }
         if(this.orderId_exit_1 == dataObj.orderLinkId){
             this.isPartialExit = true
-            this.exit_price_1 = dataObj.avgPrice
+
         }
 
         const docId = this.getTradeStatusDocId()
