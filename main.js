@@ -6,7 +6,8 @@ const alogo2 = require('./alogs/alog2Class.js');
 const { fileLogger, consoleLogger } = require('./common/logger.js'); // 로거 import
 const cron = require('node-cron');
 
-const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT'];
+//const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT'];
+const symbols = ['SOLUSDT', 'XRPUSDT'];
 
 const { auth } = require('./db/firebaseConfig.js');
 const { signInWithEmailAndPassword } = require("firebase/auth");
