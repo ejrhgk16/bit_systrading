@@ -71,31 +71,36 @@ class alogo2{
 
         const docId = this.getTradeStatusDocId();
         const data = await getTradeStatus(docId)
+
         if(data){
             Object.assign(this, data);
             await this.doubleCheckStatus()
-        }else{
-            const alog2State = { ...this };
-            await setTradeStatus(docId, alog2State)
+            
         }
-        consoleLogger.info(this.symbol + ' 초기 설정 완료')
+
+        const alog2State = { ...this };
+        await setTradeStatus(docId, alog2State)
+
+        consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ' + this.capital)
         
     }
 
 
     async open(){//포지션 타입, 스탑로스 계산 -> 주문 // 포지션 없는경우 반복실행되어야함
 
-    
         const data_60m = await getKline(this.symbol, '60', 125)
+        
 
-        const latestCandle = data_60m[data_60m.length];
+        const latestCandle = data_60m[data_60m.length - 1];
         const current_close = latestCandle[4];
+ 
 
         const bbObj =  calculateBB(data_60m, 120, 1, 0);
 
         const adxObj = calculateDMI(data_60m, 14, 0);
         const ema_5 = calculateEMA(data_60m, 5, 0);
         const ema_10 = calculateEMA(data_60m, 10, 0);
+
 
         //포지션타입계산 및 entry_allow 계산
         if(current_close > bbObj.upper){
@@ -389,7 +394,7 @@ class alogo2{
     }
 
     async doubleCheckStatus(){
-        const res1 = await rest_client.getActiveOrders({
+        const res1 = await rest_client.getActiveOrders({ 
             category: 'linear',
             symbol: this.symbol,
             openOnly: 0,

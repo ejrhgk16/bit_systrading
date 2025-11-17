@@ -120,6 +120,8 @@ async function main(){//웹소켓 셋 및 스케줄링
     consoleLogger.info(message);
     fileLogger.info(message);
   });
+
+
 }
 
 
