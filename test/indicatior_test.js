@@ -1,5 +1,5 @@
-const { calculateDMI, calculateBB, calculateEMA } = require('./indicatior');
-const { getKline } = require('./util');
+const { calculateDMI, calculateBB, calculateEMA } = require('../common/indicatior');
+const { getKline } = require('../common/util');
 
 // 테스트 실행 함수
 async function runTest(testName, testFunction) {
@@ -17,7 +17,7 @@ async function runTest(testName, testFunction) {
 async function main() {
   // alogo2Class.js와 유사하게 데이터를 가져옵니다.
   // 여기서는 'BTCUSDT'와 '60'분봉을 예시로 사용합니다.
-  const symbol = 'ETHUSDT';
+  const symbol = 'SOLUSDT';
   const interval = '60';
   const limit = 200; // 지표 계산에 충분한 데이터 확보
 

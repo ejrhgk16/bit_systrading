@@ -57,6 +57,7 @@ async function main(){//웹소켓 셋 및 스케줄링
 
   cron.schedule('59 23 * * *', async () => { // 매일 00:01 분 마다
     consoleLogger.info("=====================================================================")
+    //하루 거래내역및 pnl 출력 추가 할 거
   }, {
     timezone: 'UTC'
   });
@@ -93,7 +94,7 @@ async function main(){//웹소켓 셋 및 스케줄링
 
 
   ws_client.on('response', (response) => {
-    consoleLogger.info(`response: ${JSON.stringify(response)}`);
+    //consoleLogger.info(`response: ${JSON.stringify(response)}`);
   });
 
 

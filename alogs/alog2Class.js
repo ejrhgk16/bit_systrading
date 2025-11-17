@@ -1,3 +1,4 @@
+
 //전략 : 변동성(볼밴)
 const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('../common/client');
 const {calculateDMI, calculateBB, calculateEMA} = require('../common/indicatior');
@@ -29,9 +30,9 @@ class alogo2{
         this.exit_size_1 = 0.0; //1차 청산 물량
         this.exit_size_2 = 0.0; //2차 청산 물량
 
-        this.orderId_open = null//링크아이디로내가 설정해서 저장
-        this.orderId_exit_1 = null//링크아이디로내가 설정해서 저장
-        this.orderId_exit_2 = null//링크아이디로내가 설정해서 저장
+        this.orderId_open = null//오더링크아이디로 용
+        this.orderId_exit_1 = null//오더링크아이디 용
+        this.orderId_exit_2 = null//오더링크아이디 용 
 
         this.positionType = null;//long short null
         this.isOpenOrderFilled = false
@@ -47,10 +48,8 @@ class alogo2{
 
         this.qtyMultiplier = Math.pow(10, decimalPlaces_qty); // 수량설정을 위한 소수점 자릿수에 따른 승수
         this.priceMultiplier = Math.pow(10, decimalPlaces_price)
-
-        this.orderId_open = 'algo2_'+this.symbol+'_open'
-        this.orderId_exit_1 = 'algo2_'+this.symbol+'_exit_1'
-        this.orderId_exit_2 = 'algo2_'+this.symbol+'_exit_2'
+        
+        this.setNewOrderId()
 
         this.capital = Number(process.env["algo2_"+this.symbol+"_capital"])
         this.leverage = Number(process.env["algo2_"+this.symbol+"_leverage"] || 10);
@@ -89,14 +88,14 @@ class alogo2{
     
         const data_60m = await getKline(this.symbol, '60', 125)
 
-        const latestCandle = data_60m[data_60m.length - 1];
+        const latestCandle = data_60m[data_60m.length];
         const current_close = latestCandle[4];
 
-        const bbObj =  calculateBB(data_60m, 120, 1, 1);
+        const bbObj =  calculateBB(data_60m, 120, 1, 0);
 
-        const adxObj = calculateDMI(data_60m, 14, 1);
-        const ema_5 = calculateEMA(data_60m, 5, 1);
-        const ema_10 = calculateEMA(data_60m, 10, 1);
+        const adxObj = calculateDMI(data_60m, 14, 0);
+        const ema_5 = calculateEMA(data_60m, 5, 0);
+        const ema_10 = calculateEMA(data_60m, 10, 0);
 
         //포지션타입계산 및 entry_allow 계산
         if(current_close > bbObj.upper){
@@ -123,7 +122,6 @@ class alogo2{
             return
         }
 
-        // 사용자 요청에 따라 레버리지 곱셈 제거
         const rawOrderSize = this.capital / current_close; 
         this.orderSize = Math.round(rawOrderSize * this.qtyMultiplier) / this.qtyMultiplier;
         
@@ -134,6 +132,10 @@ class alogo2{
 
         this.openPrice = current_close
 
+        this.setNewOrderId()
+
+        //const triggerDirection = this.positionType === 'long' ? '1' : '2'; // 1: Rise, 2: Fall
+
         const orderParams = {
             category: 'linear',
             symbol: this.symbol,
@@ -141,20 +143,36 @@ class alogo2{
             qty: (this.orderSize).toString(),
             side: side,
             orderLinkId : this.orderId_open,
+            // triggerPrice: (this.openPrice).toString(),
+            // triggerDirection: triggerDirection,
+            // triggerBy: "MarkPrice",
         };
         
         consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
-           .catch((e) => fileLogger.error(`open error: ${JSON.stringify(e)}`));
+        .then(res =>{
+            // console.log("open then res", res)
+            // if (response.retCode !== 0) {
+            //     fileLogger.error(`exit2 order API 실패: ${JSON.stringify(response)}`);
+            // }else{
+
+            // }
+           
+        }).catch((e) => {
+            fileLogger.error(`open error: ${JSON.stringify(e)}`)
+            consoleLogger.error('open error >>> reset후 재주문 요청')
+            this.reset()
+            ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
+        });
         
     }
     
     async openOrderFilledCallback(){//오픈 포지션 체결되면 스탑설정 1번실행
 
-        const data_60m = await getKline(this.symbol, '60', 12)
-        let ema_5 = calculateEMA(data_60m, 5, 1);
-        let ema_10 = calculateEMA(data_60m, 10, 1);
+        const data_60m = await getKline(this.symbol, '60', 50)
+        let ema_5 = calculateEMA(data_60m, 5, 0);
+        let ema_10 = calculateEMA(data_60m, 10, 0);
 
         ema_5 = Math.round(ema_5 * this.priceMultiplier) / this.priceMultiplier;
         ema_10 = Math.round(ema_10 * this.priceMultiplier) / this.priceMultiplier;
@@ -178,6 +196,7 @@ class alogo2{
         }
         
         const side = this.positionType == 'long' ? 'Sell' : 'Buy'
+        const triggerDirection = this.positionType === 'long' ? '2' : '1'; // 1: Rise, 2: Fall
 
         const exit1Params = {
             category: "linear",
@@ -185,6 +204,7 @@ class alogo2{
             side: side,
             qty: (this.exit_size_1).toString(),
             triggerPrice: (this.exit_price_1).toString(),
+            triggerDirection: triggerDirection,
             triggerBy: "MarkPrice",
             orderType: "Market",
             reduceOnly: true,
@@ -192,9 +212,19 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 1차 청산 주문 요청\n${JSON.stringify(exit1Params, null, 2)}`);
+        consoleLogger.order(`${this.symbol} 1차 청산 설정\n${JSON.stringify(exit1Params, null, 2)}`);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params)
-            .catch((e) => fileLogger.error(`exit1 error: ${JSON.stringify(e)}`));
+            .catch((e) => {
+                fileLogger.error(`order exit1 error: ${JSON.stringify(e)}`)
+                consoleLogger.error('order exit1 error 강제 청산 실행')
+                const marketCloseParams = { ...exit1Params }; 
+                delete marketCloseParams.triggerPrice;
+                delete marketCloseParams.triggerDirection;
+                delete marketCloseParams.triggerBy;
+                delete marketCloseParams.timeInForce;
+                ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', marketCloseParams)        
+        
+            });
 
         const exit2Params = {
             category: "linear",
@@ -202,6 +232,7 @@ class alogo2{
             side: side,
             qty: (this.exit_size_2).toString(),
             triggerPrice: (this.exit_price_2).toString(),
+            triggerDirection: triggerDirection,
             triggerBy: "MarkPrice",
             orderType: "Market",
             reduceOnly: true,
@@ -209,17 +240,31 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 2차 청산 주문 요청\n${JSON.stringify(exit2Params, null, 2)}`);
+        consoleLogger.order(`${this.symbol} 2차 청산 설정\n${JSON.stringify(exit2Params, null, 2)}`);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit2Params)
-            .catch((e) => fileLogger.error(`exit2 error: ${JSON.stringify(e)}`));
+            .then(res =>{
+                // console.log("exit_2 then ",res)
+            })
+            .catch((e) => {
+                fileLogger.error(`order exit2 error: ${JSON.stringify(e)}`)
+                consoleLogger.error('order exit2 error 강제 청산 실행')
+                
+                const marketCloseParams = { ...exit1Params }; 
+                delete marketCloseParams.triggerPrice;
+                delete marketCloseParams.triggerDirection;
+                delete marketCloseParams.triggerBy;
+                delete marketCloseParams.timeInForce;
+                ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', marketCloseParams)     
+        
+            });
 
     }
 
     async updateStop(){//포지션이있는경우 반복되어야함
 
-        const data_60m = await getKline(this.symbol, '60', 12);
-        let ema_5 = calculateEMA(data_60m, 5, 1);
-        let ema_10 = calculateEMA(data_60m, 10, 1);
+        const data_60m = await getKline(this.symbol, '60', 50);
+        let ema_5 = calculateEMA(data_60m, 5, 0);
+        let ema_10 = calculateEMA(data_60m, 10, 0);
 
         ema_5 = Math.round(ema_5 * this.priceMultiplier) / this.priceMultiplier;
         ema_10 = Math.round(ema_10 * this.priceMultiplier) / this.priceMultiplier;
@@ -253,7 +298,9 @@ class alogo2{
             
             consoleLogger.order(`${this.symbol} 1차 청산 주문 수정 요청\n${JSON.stringify(amend1Params, null, 2)}`);
             ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend1Params)
-                .catch((e) => fileLogger.error(`amend exit1 error: ${JSON.stringify(e)}`));
+                .catch((e) => {
+                    fileLogger.error(`amend exit1 error: ${JSON.stringify(e)}`)
+                });
         }
 
         const amend2Params = {
@@ -283,6 +330,10 @@ class alogo2{
         this.entry_allow = false
         this.isPartialExit = false
         this.isOpenOrderFilled = false
+
+        this.orderId_open = null
+        this.orderId_exit_1 = null
+        this.orderId_exit_2 = null
 
     }
 
@@ -363,6 +414,14 @@ class alogo2{
 
     }
 
+    setNewOrderId(){//새로운 open 주문들어갈때마다 실행필
+
+        this.orderId_open = `algo2_${this.symbol}_open_${new Date().getTime()}`
+        this.orderId_exit_1 = `algo2_${this.symbol}_exit1_${new Date().getTime()}`
+        this.orderId_exit_2 = `algo2_${this.symbol}_exit2_${new Date().getTime()}`
+
+    }
+
     async scheduleFunc(){
 
         if(!this.isOpenOrderFilled){
@@ -370,6 +429,54 @@ class alogo2{
         }else{
             this.updateStop()
         }
+
+    }
+
+    async open_test(){//테스트용 강제로 주문체결
+
+        const data_60m = await getKline(this.symbol, '60', 125)
+
+        const latestCandle = data_60m[data_60m.length - 1];
+        const current_close = latestCandle[4];
+
+        const rawOrderSize = this.capital / current_close; 
+        this.orderSize = Math.round(rawOrderSize * this.qtyMultiplier) / this.qtyMultiplier;
+        
+        this.exit_size_1 = Math.round((this.orderSize / 2) * this.qtyMultiplier) / this.qtyMultiplier;
+        this.exit_size_2 = Math.round((this.orderSize - this.exit_size_1) * this.qtyMultiplier) / this.qtyMultiplier;
+
+        const side = this.positionType == 'long' ? 'Buy' : 'Sell'
+
+        this.openPrice = current_close
+
+        this.setNewOrderId()
+
+        //const triggerDirection = this.positionType === 'long' ? '1' : '2'; // 1: Rise, 2: Fall
+
+        const orderParams = {
+            category: 'linear',
+            symbol: this.symbol,
+            orderType: 'Market',
+            qty: (this.orderSize).toString(),
+            side: side,
+            orderLinkId : this.orderId_open,
+            // triggerPrice: (this.openPrice).toString(),
+            // triggerDirection: triggerDirection,
+            // triggerBy: "MarkPrice",
+        };
+        
+        consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
+
+        ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
+        .then(res =>{
+            //console.log("open then res", res)
+            // if (response.retCode !== 0) {
+            //     fileLogger.error(`exit2 order API 실패: ${JSON.stringify(response)}`);
+            // }else{
+
+            // }
+           
+        })
 
     }
 
