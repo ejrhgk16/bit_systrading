@@ -163,7 +163,7 @@ class alogo2{
             fileLogger.error(`open error: ${JSON.stringify(e)}`)
             consoleLogger.error('open error >>> reset후 재주문 요청')
             this.reset()
-            ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
+            this.open()
         });
         
     }
@@ -176,6 +176,7 @@ class alogo2{
 
         ema_5 = Math.round(ema_5 * this.priceMultiplier) / this.priceMultiplier;
         ema_10 = Math.round(ema_10 * this.priceMultiplier) / this.priceMultiplier;
+
 
         if(this.positionType == "long" && ema_5 > ema_10){
             this.exit_price_1 = ema_5
@@ -222,6 +223,9 @@ class alogo2{
                 delete marketCloseParams.triggerDirection;
                 delete marketCloseParams.triggerBy;
                 delete marketCloseParams.timeInForce;
+
+                this.setNewOrderId()
+                marketCloseParams.orderLinkId = this.orderId_exit_1
                 ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', marketCloseParams)        
         
             });
@@ -254,6 +258,9 @@ class alogo2{
                 delete marketCloseParams.triggerDirection;
                 delete marketCloseParams.triggerBy;
                 delete marketCloseParams.timeInForce;
+
+                this.setNewOrderId()
+                marketCloseParams.orderLinkId = this.orderId_exit_2
                 ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', marketCloseParams)     
         
             });
@@ -341,15 +348,17 @@ class alogo2{
 
     async orderEventHandle(dataObj){//orderstatus == filled
         
+
+        if(dataObj?.orderStatus != 'Filled') return;
+
         const data = {...dataObj, 
             openPrice : this.openPrice, 
             exit_price_1 : this.exit_price_1, 
             exit_price_2 : this.exit_price_2
         }
-        
-        addTradeLog(data)
+        const tradeLogDocId = "algo2_"+this.symbol
+        addTradeLog(tradeLogDocId,data)
 
-        if(dataObj?.orderStatus != 'Filled') return;
 
         consoleLogger.order(`${this.symbol} ${dataObj.orderLinkId} 체결 -- side: ${dataObj.side}, price: ${dataObj.price}, qty: ${dataObj.qty} `);
 
@@ -363,14 +372,13 @@ class alogo2{
 
         }
 
-        const docId = this.getTradeStatusDocId()
-        const alog2State = { ...this };
-        setTradeStatus(docId, alog2State)
-
-
         if(this.orderId_exit_2 == dataObj.orderLinkId){
             this.reset()
         }
+
+        const docId = this.getTradeStatusDocId()
+        const alog2State = { ...this };
+        setTradeStatus(docId, alog2State)
 
         
     }
@@ -409,6 +417,8 @@ class alogo2{
         }else if(res1?.result?.list?.length <= 0 && res2?.result?.list?.length > 0){
             this.isOpenOrderFilled = true
             this.isPartialExit = true
+        }else{
+            this.reset()
         }
 
 
@@ -423,12 +433,16 @@ class alogo2{
     }
 
     async scheduleFunc(){
-
-        if(!this.isOpenOrderFilled){
-            this.open()
-        }else{
-            this.updateStop()
+        try {
+            if(!this.isOpenOrderFilled){
+                await this.open()
+            }else{
+                await this.updateStop()
+            }
+        } catch (error) {
+            fileLogger.error(JSON.stringify(error))
         }
+
 
     }
 
@@ -445,6 +459,7 @@ class alogo2{
         this.exit_size_1 = Math.round((this.orderSize / 2) * this.qtyMultiplier) / this.qtyMultiplier;
         this.exit_size_2 = Math.round((this.orderSize - this.exit_size_1) * this.qtyMultiplier) / this.qtyMultiplier;
 
+        this.positionType = 'long'
         const side = this.positionType == 'long' ? 'Buy' : 'Sell'
 
         this.openPrice = current_close

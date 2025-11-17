@@ -1,3 +1,4 @@
+
 const { db } = require('./firebaseConfig.js');
 // getDoc, setDoc 추가 및 serverTimestamp를 require로 변경
 const { collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp } = require('firebase/firestore');
@@ -28,18 +29,43 @@ async function setTradeStatus(documentId, data, merge = true) { // merge 기본�
     }
 }
 
-// Firestore에 데이터를 추가하는 예제 함수
-async function addTradeLog(data) {
-  try {
-    const docRef = await addDoc(collection(db, "trade_log"), {
-        ...data,
-        timestamp : serverTimestamp()
-    });
-    // console.log("Document written with ID: ", docRef.id); // 성공 로그는 일단 주석 처리
-    return docRef.id;
-  } catch (e) {
-    consoleLogger.error(`Error adding document: ${JSON.stringify(e)}`);
-  }
+// 날짜를 YYYY-MM-DD 형식(UTC 기준)으로 반환하는 헬퍼 함수
+function getFormattedDate() {
+    const d = new Date();
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * 'trade_logs/algo_symbol(문서)/날짜(컬렉션)' 계층 구조로 거래 로그를 추가하는 함수
+ * @param {string} parentDocId - 부모 문서의 ID (예: 'algo2_BTCUSDT')
+ * @param {object} data - 저장할 로그 데이터
+ */
+async function addTradeLog(parentDocId, data) {
+    try {
+        const dateStr = getFormattedDate(); // 예: "2024-05-21"
+
+        // 1. 부모 문서 참조 생성 ('trade_logs' 컬렉션 아래에 위치)
+        const parentDocRef = doc(db, 'trade_log', parentDocId);
+        
+        // 2. 부모 문서가 존재하도록 빈 객체로 생성/병합 (내용은 덮어쓰지 않음)
+        await setDoc(parentDocRef, {}, { merge: true });
+
+        // 3. 부모 문서 아래에 날짜 하위 컬렉션 참조 생성
+        const logCollectionRef = collection(parentDocRef, dateStr);
+
+        // 4. 날짜 하위 컬렉션에 로그 데이터 문서 추가
+        const docRef = await addDoc(logCollectionRef, {
+            ...data,
+            timestamp: serverTimestamp()
+        });
+        
+        return docRef.id;
+    } catch (e) {
+        consoleLogger.error(`Error adding hierarchical log: ${JSON.stringify(e)}`);
+    }
 }
 
 module.exports = { getTradeStatus, setTradeStatus, addTradeLog };

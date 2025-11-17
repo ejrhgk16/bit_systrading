@@ -31,18 +31,18 @@ async function main() {
   console.log(`데이터 ${klineData.length}개 수신 완료.`);
 
   // --- EMA 테스트 ---
-  await runTest('calculateEMA - (period: 10, when: 1)', async () => {
+  await runTest('calculateEMA - (period: 10, when: 0)', async () => {
     const period = 10;
-    const when = 1;
+    const when = 0;
     const ema = calculateEMA(klineData, period, when);
     
     console.log(`  EMA (10, 1) Result: ${ema}`);
     console.assert(typeof ema === 'number', 'EMA 결과는 숫자여야 합니다.');
   });
 
-  await runTest('calculateEMA - (period: 5, when: 1)', async () => {
+  await runTest('calculateEMA - (period: 5, when: 0)', async () => {
     const period = 5;
-    const when = 1;
+    const when = 0;
     const ema = calculateEMA(klineData, period, when);
     
     console.log(`  EMA (5, 1) Result: ${ema}`);
