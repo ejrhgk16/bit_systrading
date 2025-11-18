@@ -50,10 +50,10 @@ async function main() {
   });
 
   // --- BB 테스트 ---
-  await runTest('calculateBB - (period: 120, multiplier: 1, when: 1)', async () => {
+  await runTest('calculateBB - (period: 120, multiplier: 1, when: 0)', async () => {
     const period = 120;
     const multiplier = 1;
-    const when = 1;
+    const when = 0;
     const bb = calculateBB(klineData, period, multiplier, when);
 
     console.log(`  BB (120, 1, 1) Result:`, bb);
@@ -63,9 +63,9 @@ async function main() {
   });
 
   // --- DMI 테스트 ---
-  await runTest('calculateDMI - (period: 14, when: 1)', async () => {
+  await runTest('calculateDMI - (period: 14, when: 0)', async () => {
     const period = 14;
-    const when = 1;
+    const when = 0;
     const dmi = calculateDMI(klineData, period, when);
 
     console.log(`  DMI (14, 1) Result:`, dmi);
