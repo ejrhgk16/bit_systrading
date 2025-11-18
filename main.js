@@ -33,11 +33,21 @@ async function main(){//웹소켓 셋 및 스케줄링
   await Promise.all(Object.values(alog2Objs).map(obj => obj.set()));
 
 
-  // 타임아웃 시간 (10분) ---
-  const CRON_JOB_TIMEOUT_MS = 10 * 60 * 1000;
+  // --- 안전장치 1: 실행 잠금 ---
+  let isCronRunning = false;
 
-  cron.schedule('40 59 * * * *', () => {
-    consoleLogger.info("cron 40 59 * * * * 실행");
+  // --- 안전장치 2: 타임아웃 시간 (5분) ---
+  const CRON_JOB_TIMEOUT_MS = 5 * 60 * 1000;
+
+  cron.schedule('0 * * * *', () => {
+    consoleLogger.info("cron 0 * * * * 실행");
+
+    if (isCronRunning) {
+        consoleLogger.warn('이전 cron 작업이 아직 실행 중이므로 이번 작업은 건너뜁니다.');
+        return;
+    }
+
+    isCronRunning = true; // 작업 시작, 잠금!
 
     // 실제 작업 내용
     const mainTask = Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));
@@ -45,27 +55,31 @@ async function main(){//웹소켓 셋 및 스케줄링
     // 타임아웃을 감시하는 프로미스
     const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-            reject(new Error(`cron 40 59 * * * * 작업 시간 초과! (${CRON_JOB_TIMEOUT_MS / 1000}초 이상 실행됨)`));
+            reject(new Error(`크론 작업 시간 초과! (${CRON_JOB_TIMEOUT_MS / 1000}초 이상 실행됨)`));
         }, CRON_JOB_TIMEOUT_MS);
     });
 
     // Promise.race: 실제 작업과 타임아웃 중 먼저 끝나는 쪽을 따릅니다.
     Promise.race([mainTask, timeoutPromise])
         .then(() => {
-            consoleLogger.info("cron 40 59 * * * * 완료");
+            consoleLogger.info("cron 0 * * * * 완료");
         })
         .catch(error => {
             // mainTask의 오류 또는 타임아웃 오류가 여기로 들어옵니다.
-            const errorMessage = `cron 40 59 * * * * 오류발생: ${error.stack || JSON.stringify(error)}`;
+            const errorMessage = `cron 0 * * * * 오류발생: ${error.stack || JSON.stringify(error)}`;
             consoleLogger.error(errorMessage);
             fileLogger.error(errorMessage);
         })
+        .finally(() => {
+            isCronRunning = false; // 작업이 성공하든, 실패하든, 타임아웃되든 잠금을 해제합니다.
+            console.log(" ");
+        });
 
   }, {
     timezone: 'UTC'
   });
 
-  cron.schedule('0 0 * * *', async () => { // 매일 23:59분 마다
+  cron.schedule('59 23 * * *', async () => { // 매일 23:59분 마다
     consoleLogger.info("=====================================================================")
     //하루 거래내역및 pnl 출력 추가 할 거
   }, {
@@ -87,37 +101,50 @@ ws_client.on('update', async (res) => {
         const alog2ObjTemp = alog2Objs[element.symbol]
         if (alog2ObjTemp) {
             alog2ObjTemp.orderEventHandle(element)
+        } else {
+            consoleLogger.warn(`수신된 주문 이벤트의 심볼(${element.symbol})에 해당하는 객체를 찾을 수 없습니다.`);
         }
       });
     }
   } catch(e) {
-    fileLogger.error('update error', e);
+    const errorMessage = `ws_client 'update' 이벤트 처리 중 오류 발생: ${e.stack || JSON.stringify(e)}`;
+    consoleLogger.error(errorMessage);
+    fileLogger.error(errorMessage);
   }
 });
 
-ws_client.on('close', () => {
-  consoleLogger.info('ws connection closed');
+// 연결이 닫혔을 때, 그 이유를 포함하여 로그를 남깁니다.
+ws_client.on('close', (event) => {
+  const closeReason = `ws connection closed. Event: ${JSON.stringify(event, null, 2)}`;
+  consoleLogger.warn(closeReason);
+  fileLogger.warn(closeReason);
 });
 
+// 에러 발생 시, 상세한 에러 정보를 로그로 남깁니다.
 ws_client.on('error', (err) => {
-  consoleLogger.error('ws connection error: ', err);
+  const errorMessage = `ws connection error: ${err.stack || JSON.stringify(err, null, 2)}`;
+  consoleLogger.error(errorMessage);
+  fileLogger.error(errorMessage);
 });
 
 ws_client.on('open', ({ wsKey, event }) => {
-  consoleLogger.info('ws connection open for ', wsKey);
+  consoleLogger.info(`ws connection open for ${wsKey}`);
 });
 
 ws_client.on('response', (response) => {
   // console.log('ws response: ', response);
 });
 
+// 재연결 시작 시, 파일에도 로그를 남깁니다.
 ws_client.on('reconnect', ({ wsKey }) => {
-  consoleLogger.info('ws automatically reconnecting.... ', wsKey);
-  fileLogger.info('ws automatically reconnecting.... ', wsKey);
+  const reconnectMessage = `ws automatically reconnecting.... ${wsKey}`;
+  consoleLogger.info(reconnectMessage);
+  fileLogger.info(reconnectMessage);
 });
 
+// 재연결 성공 시, 파일에도 로그를 남깁니다.
 ws_client.on('reconnected', ({ wsKey }) => {
-  consoleLogger.info('ws has reconnected ', wsKey);
-  fileLogger.info('ws has reconnected ', wsKey);
-
+  const reconnectedMessage = `ws has reconnected ${wsKey}`;
+  consoleLogger.info(reconnectedMessage);
+  fileLogger.info(reconnectedMessage);
 });
