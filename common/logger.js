@@ -47,7 +47,7 @@ const fileLogger = winston.createLogger({
     winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
-    new winston.transports.File({ filename: `logs/${getTodayDate()}.log`})
+    new winston.transports.File({ filename: `logs/app-${getTodayDate()}.log` })
   ]
 });
 

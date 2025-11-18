@@ -54,21 +54,6 @@ class alogo2{
         this.capital = Number(process.env["algo2_"+this.symbol+"_capital"])
         this.leverage = Number(process.env["algo2_"+this.symbol+"_leverage"] || 10);
 
-        // try {
-        //     // 레버리지 설정 API 호출
-        //     await rest_client.setLeverage({
-        //         category: 'linear',
-        //         symbol: this.symbol,
-        //         buyLeverage: (this.leverage).toString(),
-        //         sellLeverage: (this.leverage).toString(),
-        //     });
-        //     consoleLogger.info(`${this.symbol} 레버리지 ${this.leverage}배 설정 완료.`);
-        // } catch (e) {
-        //     consoleLogger.error(`${this.symbol} 레버리지 설정 실패.`, e);
-        //     // 레버리지 설정 실패 시, 로직을 더 이상 진행하지 않도록 처리할 수 있습니다.
-        //     return; 
-        // }
-
         const docId = this.getTradeStatusDocId();
         const data = await getTradeStatus(docId)
 
@@ -139,8 +124,6 @@ class alogo2{
 
         this.setNewOrderId()
 
-        //const triggerDirection = this.positionType === 'long' ? '1' : '2'; // 1: Rise, 2: Fall
-
         const orderParams = {
             category: 'linear',
             symbol: this.symbol,
@@ -148,27 +131,18 @@ class alogo2{
             qty: (this.orderSize).toString(),
             side: side,
             orderLinkId : this.orderId_open,
-            // triggerPrice: (this.openPrice).toString(),
-            // triggerDirection: triggerDirection,
-            // triggerBy: "MarkPrice",
         };
         
         consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
-        .then(res =>{
-            // console.log("open then res", res)
-            // if (response.retCode !== 0) {
-            //     fileLogger.error(`exit2 order API 실패: ${JSON.stringify(response)}`);
-            // }else{
-
-            // }
-           
-        }).catch((e) => {
-            fileLogger.error(`open error: ${JSON.stringify(e)}`)
-            consoleLogger.error('open error >>> reset후 재주문 요청')
-            this.reset()
-            this.open()
+        .catch((e) => {
+            const errorMessage = `open error: ${e.stack || e}`;
+            fileLogger.error(errorMessage);
+            consoleLogger.error(errorMessage);
+            consoleLogger.error('open error >>> reset후 재주문 요청');
+            this.reset();
+            this.open();
         });
         
     }
@@ -221,8 +195,10 @@ class alogo2{
         consoleLogger.order(`${this.symbol} 1차 청산 설정\n${JSON.stringify(exit1Params, null, 2)}`);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params)
             .catch((e) => {
-                fileLogger.error(`order exit1 error: ${JSON.stringify(e)}`)
-                consoleLogger.error('order exit1 error 강제 청산 실행')
+                const errorMessage = `order exit1 error: ${e.stack || e}`;
+                fileLogger.error(errorMessage);
+                consoleLogger.error(errorMessage);
+                consoleLogger.error('order exit1 error 강제 청산 실행');
                 const marketCloseParams = { ...exit1Params }; 
                 delete marketCloseParams.triggerPrice;
                 delete marketCloseParams.triggerDirection;
@@ -251,14 +227,13 @@ class alogo2{
         
         consoleLogger.order(`${this.symbol} 2차 청산 설정\n${JSON.stringify(exit2Params, null, 2)}`);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit2Params)
-            .then(res =>{
-                // console.log("exit_2 then ",res)
-            })
             .catch((e) => {
-                fileLogger.error(`order exit2 error: ${JSON.stringify(e)}`)
-                consoleLogger.error('order exit2 error 강제 청산 실행')
+                const errorMessage = `order exit2 error: ${e.stack || e}`;
+                fileLogger.error(errorMessage);
+                consoleLogger.error(errorMessage);
+                consoleLogger.error('order exit2 error 강제 청산 실행');
                 
-                const marketCloseParams = { ...exit1Params }; 
+                const marketCloseParams = { ...exit2Params }; 
                 delete marketCloseParams.triggerPrice;
                 delete marketCloseParams.triggerDirection;
                 delete marketCloseParams.triggerBy;
@@ -311,7 +286,9 @@ class alogo2{
             consoleLogger.order(`${this.symbol} 1차 청산 주문 수정 요청\n${JSON.stringify(amend1Params, null, 2)}`);
             ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend1Params)
                 .catch((e) => {
-                    fileLogger.error(`amend exit1 error: ${JSON.stringify(e)}`)
+                    const errorMessage = `amend exit1 error: ${e.stack || e}`;
+                    fileLogger.error(errorMessage);
+                    consoleLogger.error(errorMessage);
                 });
         }
 
@@ -324,7 +301,11 @@ class alogo2{
         
         consoleLogger.order(`${this.symbol} 2차 청산 주문 수정 요청\n${JSON.stringify(amend2Params, null, 2)}`);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend2Params)
-            .catch((e) => fileLogger.error(`amend exit2 error: ${JSON.stringify(e)}`));
+            .catch((e) => {
+                const errorMessage = `amend exit2 error: ${e.stack || e}`;
+                fileLogger.error(errorMessage);
+                consoleLogger.error(errorMessage);
+            });
 
 
     }
@@ -402,7 +383,9 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            consoleLogger.error(`${this.symbol} getActiveOrders (exit1) failed: ${JSON.stringify(error)}`);
+            const errorMessage = `${this.symbol} getActiveOrders (exit1) failed: ${error.stack || error}`;
+            consoleLogger.error(errorMessage);
+            fileLogger.error(errorMessage);
         });
 
         const res2 = await rest_client.getActiveOrders({
@@ -413,7 +396,9 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            consoleLogger.error(`${this.symbol} getActiveOrders (exit2) failed: ${JSON.stringify(error)}`);
+            const errorMessage = `${this.symbol} getActiveOrders (exit2) failed: ${error.stack || error}`;
+            consoleLogger.error(errorMessage);
+            fileLogger.error(errorMessage);
         });
 
         if(res1?.result?.list?.length > 0 && res2?.result?.list?.length > 0){
@@ -445,7 +430,9 @@ class alogo2{
                 await this.updateStop()
             }
         } catch (error) {
-            fileLogger.error(JSON.stringify(error))
+            const errorMessage = `scheduleFunc error: ${error.stack || error}`;
+            fileLogger.error(errorMessage);
+            consoleLogger.error(errorMessage);
         }
 
 
@@ -471,8 +458,6 @@ class alogo2{
 
         this.setNewOrderId()
 
-        //const triggerDirection = this.positionType === 'long' ? '1' : '2'; // 1: Rise, 2: Fall
-
         const orderParams = {
             category: 'linear',
             symbol: this.symbol,
@@ -480,22 +465,15 @@ class alogo2{
             qty: (this.orderSize).toString(),
             side: side,
             orderLinkId : this.orderId_open,
-            // triggerPrice: (this.openPrice).toString(),
-            // triggerDirection: triggerDirection,
-            // triggerBy: "MarkPrice",
         };
         
         consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
-        .then(res =>{
-            //console.log("open then res", res)
-            // if (response.retCode !== 0) {
-            //     fileLogger.error(`exit2 order API 실패: ${JSON.stringify(response)}`);
-            // }else{
-
-            // }
-           
+        .catch((e) => {
+           const errorMessage = `open_test error: ${e.stack || e}`;
+           fileLogger.error(errorMessage);
+           consoleLogger.error(errorMessage);
         })
 
     }
