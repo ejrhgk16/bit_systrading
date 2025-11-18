@@ -39,8 +39,8 @@ async function main(){//웹소켓 셋 및 스케줄링
   // --- 안전장치 2: 타임아웃 시간 (5분) ---
   const CRON_JOB_TIMEOUT_MS = 5 * 60 * 1000;
 
-  cron.schedule('0 * * * *', () => {
-    consoleLogger.info("cron 0 * * * * 실행");
+  cron.schedule('40 59 * * * *', () => {
+    consoleLogger.info("cron 40 59 * * * * 실행");
 
     if (isCronRunning) {
         consoleLogger.warn('이전 cron 작업이 아직 실행 중이므로 이번 작업은 건너뜁니다.');
@@ -62,11 +62,11 @@ async function main(){//웹소켓 셋 및 스케줄링
     // Promise.race: 실제 작업과 타임아웃 중 먼저 끝나는 쪽을 따릅니다.
     Promise.race([mainTask, timeoutPromise])
         .then(() => {
-            consoleLogger.info("cron 0 * * * * 완료");
+            consoleLogger.info("cron 40 59 * * * * 완료");
         })
         .catch(error => {
             // mainTask의 오류 또는 타임아웃 오류가 여기로 들어옵니다.
-            const errorMessage = `cron 0 * * * * 오류발생: ${error.stack || JSON.stringify(error)}`;
+            const errorMessage = `cron 40 59 * * * * 오류발생: ${error.stack || JSON.stringify(error)}`;
             consoleLogger.error(errorMessage);
             fileLogger.error(errorMessage);
         })
