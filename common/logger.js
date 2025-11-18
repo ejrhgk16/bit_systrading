@@ -1,5 +1,6 @@
 const winston = require('winston');
 const path = require('path');
+const { inspect } = require('util');
 
 // 현재 날짜를 'YYYY-MM-DD' 형식으로 반환하는 함수
 function getTodayDate() {
@@ -44,7 +45,12 @@ const fileLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
+    winston.format.printf(info => {
+        const splat = Symbol.for('splat');
+        const meta = info[splat] || [];
+        const metaString = meta.length ? ' ' + meta.map(m => inspect(m, { colors: false, depth: null })).join(' ') : '';
+        return `[${info.timestamp} ${info.level}] ${info.message}${metaString}`;
+    })
   ),
   transports: [
     new winston.transports.File({ filename: `logs/app-${getTodayDate()}.log` })
@@ -60,7 +66,12 @@ const consoleLogger = winston.createLogger({
     winston.format.timestamp({
       format: utcTimestamp // UTC 타임스탬프 사용
     }),
-    winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
+    winston.format.printf(info => {
+        const splat = Symbol.for('splat');
+        const meta = info[splat] || [];
+        const metaString = meta.length ? ' ' + meta.map(m => inspect(m, { colors: true, depth: null })).join(' ') : '';
+        return `[${info.timestamp} ${info.level}] ${info.message}${metaString}`;
+    })
   ),
   transports: [
     new winston.transports.Console() // 콘솔에 출력

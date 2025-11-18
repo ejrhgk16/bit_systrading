@@ -25,7 +25,7 @@ async function getWeeklyOpen(symbol){
       }
     
     } catch (error) {
-      consoleLogger.error(`An error occurred in getWeeklyOpen: ${JSON.stringify(error)}`);
+      consoleLogger.error('An error occurred in getWeeklyOpen:', error);
     }
     
   
@@ -69,7 +69,7 @@ async function getWeeklyOpen(symbol){
         consoleLogger.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}. API Response Message: ${response.retMsg}`);
       }
     } catch (error) {
-      consoleLogger.error(`An error occurred in getWeeklyMovingAverage: ${JSON.stringify(error)}`);
+      consoleLogger.error('An error occurred in getWeeklyMovingAverage:', error);
     }
   }
   
@@ -107,7 +107,7 @@ async function getWeeklyOpen(symbol){
         consoleLogger.error(`Failed to fetch enough kline data for MA calculation. Need 6 data points, but got ${dataPointCount}. API Response Message: ${response.retMsg}`);
       }
     } catch (error) {
-      consoleLogger.error(`An error occurred in getWeeklyOpenCloseDifference: ${JSON.stringify(error)}`);
+      consoleLogger.error('An error occurred in getWeeklyOpenCloseDifference:', error);
     }
   }
   
@@ -184,7 +184,7 @@ async function getWeeklyOpen(symbol){
               return null;
           }
       } catch (error) {
-          consoleLogger.error(`getStrikePrices 함수에서 오류 발생: ${JSON.stringify(error)}`);
+          consoleLogger.error('getStrikePrices 함수에서 오류 발생:', error);
           return null;
       }
   }  
@@ -233,7 +233,7 @@ async function getKline(symbol, interval, limit) {
       return null;
     }
   } catch (error) {
-    consoleLogger.error(`K-line 데이터 조회 중 오류 발생: ${JSON.stringify(error)}`);
+    consoleLogger.error('K-line 데이터 조회 중 오류 발생:', error);
     return null;
   }
 }

@@ -120,7 +120,7 @@ function calculateDMI(candles, period, when) {
     };
 
   } catch (error) {
-    consoleLogger.error(`DMI 계산 중 오류 발생: ${JSON.stringify(error)}`);
+    consoleLogger.error('DMI 계산 중 오류 발생:', error);
     return null;
   }
 }
@@ -170,7 +170,7 @@ function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
     return bbResults[lastIndex - when];
 
   } catch (error) {
-    consoleLogger.error(`BB 계산 중 오류 발생: ${JSON.stringify(error)}`);
+    consoleLogger.error('BB 계산 중 오류 발생:', error);
     return null;
   }
 }
@@ -221,7 +221,7 @@ function calculateEMA(candles, period, when = 0) {
     return emaValues[lastIndex - when];
 
   } catch (error) {
-    consoleLogger.error(`EMA 계산 중 오류 발생: ${JSON.stringify(error)}`);
+    consoleLogger.error('EMA 계산 중 오류 발생:', error);
     return null;
   }
 }

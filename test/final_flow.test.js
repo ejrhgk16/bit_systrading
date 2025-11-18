@@ -66,7 +66,7 @@ async function testMainFlow() {
     await signInWithEmailAndPassword(auth, process.env.FIREBASE_USER_EMAIL, process.env.FIREBASE_USER_PASSWORD);
     consoleLogger.info("Firebase 로그인 성공!");
   } catch (error) {
-    consoleLogger.error(`Firebase 인증 실패: ${JSON.stringify(error)}`); return; }
+    consoleLogger.error('Firebase 인증 실패:', error); return; }
 
   // 2. algo2 객체 생성 및 초기화
   const alog2Objs = symbols.reduce((acc, symbol) => ({ ...acc, [symbol]: new alogo2(symbol) }), {});
@@ -92,20 +92,20 @@ async function testMainFlow() {
   });
 
   ws_client.on('response', (response) => {
-    consoleLogger.info(`Websocket Response: ${JSON.stringify(response)}`)
+    consoleLogger.info('Websocket Response:', response)
     if(response?.req_id=="execution,order"){
       try {
         consoleLogger.info("--- [테스트] SOLUSDT 강제 진입을 위해 scheduleFunc를 즉시 실행합니다. ---");
         alog2Objs['SOLUSDT'].open_test();
         consoleLogger.info("--- [테스트] 진입 주문 전송 시도 완료. 웹소켓 체결 이벤트를 기다립니다... ---");
       } catch (error) {
-        consoleLogger.error(`즉시 실행 중 오류 발생: ${JSON.stringify(error)}`);
+        consoleLogger.error('즉시 실행 중 오류 발생:', error);
       }
     }
 
 });
   ws_client.on('close', () => consoleLogger.warn('Websocket connection closed.'));
-  ws_client.on('exception', (err) => consoleLogger.error(`Websocket Exception: ${JSON.stringify(err)}`));
+  ws_client.on('exception', (err) => consoleLogger.error('Websocket Exception:', err));
   await ws_client.connectWSAPI();
   // 4. 강제 진입을 위해 SOLUSDT의 scheduleFunc 즉시 실행
 

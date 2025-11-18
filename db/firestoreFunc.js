@@ -13,7 +13,7 @@ async function getTradeStatus(docId){
             return null
         }
     }catch(e){
-        consoleLogger.error(`Error getting documents: ${JSON.stringify(e)}`);
+        consoleLogger.error('Error getting documents:', e);
     }
 }
 
@@ -24,7 +24,7 @@ async function setTradeStatus(documentId, data, merge = true) { // merge 기본�
         await setDoc(docRef, data, { merge: merge });
         return true;
     } catch (e) {
-        consoleLogger.error(`Error setting document: ${JSON.stringify(e)}`);
+        consoleLogger.error('Error setting document:', e);
         return false;
     }
 }
@@ -64,7 +64,7 @@ async function addTradeLog(parentDocId, data) {
         
         return docRef.id;
     } catch (e) {
-        consoleLogger.error(`Error adding hierarchical log: ${JSON.stringify(e)}`);
+        consoleLogger.error('Error adding hierarchical log:', e);
     }
 }
 

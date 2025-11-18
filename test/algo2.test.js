@@ -45,7 +45,7 @@ async function runHybridTestScenario() {
     await ws_client.connectWSAPI();
     consoleLogger.info('Bybit WebSocket 연결 성공!');
   } catch (error) {
-    consoleLogger.error(`사전 준비 실패. 테스트를 중단합니다: ${JSON.stringify(error)}`);
+    consoleLogger.error('사전 준비 실패. 테스트를 중단합니다:', error);
     return;
   }
 
@@ -55,7 +55,7 @@ async function runHybridTestScenario() {
   // --- 1단계: 초기화 ---
   consoleLogger.info('\n--- STEP 1: Initialization ---');
   await algoInstance.set();
-  consoleLogger.info(`초기 상태 확인: ${JSON.stringify({ positionType: algoInstance.positionType, isOpenOrderFilled: algoInstance.isOpenOrderFilled }, null, 2)}`);
+  consoleLogger.info(`초기 상태 확인:`, { positionType: algoInstance.positionType, isOpenOrderFilled: algoInstance.isOpenOrderFilled });
 
   // --- 2단계: 강제 진입 (실제 API 호출) ---
   consoleLogger.info('\n--- STEP 2: 강제 진입 (실제 시장가 주문 API 호출) ---');
@@ -67,20 +67,20 @@ async function runHybridTestScenario() {
   const openOrderFillEvent = { orderStatus: 'Filled', orderLinkId: algoInstance.orderId_open };
   await algoInstance.orderEventHandle(openOrderFillEvent);
   consoleLogger.info(`익절 주문 2개(${algoInstance.orderId_exit_1}, ${algoInstance.orderId_exit_2})를 Bybit에 전송했습니다.`);
-  consoleLogger.info(`진입 체결 후 상태 확인: ${JSON.stringify({ isOpenOrderFilled: algoInstance.isOpenOrderFilled, isPartialExit: algoInstance.isPartialExit }, null, 2)}`);
+  consoleLogger.info(`진입 체결 후 상태 확인:`, { isOpenOrderFilled: algoInstance.isOpenOrderFilled, isPartialExit: algoInstance.isPartialExit });
 
   
   // --- 4단계: 1차 익절 주문 체결 시뮬레이션 ---
   consoleLogger.info('\n--- STEP 4: 1차 익절 체결 시뮬레이션 ---');
   const exit1OrderFillEvent = { orderStatus: 'Filled', orderLinkId: algoInstance.orderId_exit_1 };
   await algoInstance.orderEventHandle(exit1OrderFillEvent);
-  consoleLogger.info(`1차 익절 후 상태 확인: ${JSON.stringify({ isPartialExit: algoInstance.isPartialExit }, null, 2)}`);
+  consoleLogger.info(`1차 익절 후 상태 확인:`, { isPartialExit: algoInstance.isPartialExit });
 
   // --- 5단계: 최종 익절 주문 체결 및 리셋 시뮬레이션 ---
   consoleLogger.info('\n--- STEP 5: 최종 익절 및 리셋 시뮬레이션 ---');
   const exit2OrderFillEvent = { orderStatus: 'Filled', orderLinkId: algoInstance.orderId_exit_2 };
   await algoInstance.orderEventHandle(exit2OrderFillEvent);
-  consoleLogger.info(`최종 익절 후 상태 확인 (리셋 완료): ${JSON.stringify({ positionType: algoInstance.positionType, isOpenOrderFilled: algoInstance.isOpenOrderFilled, isPartialExit: algoInstance.isPartialExit }, null, 2)}`);
+  consoleLogger.info(`최종 익절 후 상태 확인 (리셋 완료):`, { positionType: algoInstance.positionType, isOpenOrderFilled: algoInstance.isOpenOrderFilled, isPartialExit: algoInstance.isPartialExit });
 
   // --- 테스트 종료 ---
   const testDuration = 5000; // 5초 후 종료

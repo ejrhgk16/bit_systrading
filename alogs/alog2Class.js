@@ -133,13 +133,12 @@ class alogo2{
             orderLinkId : this.orderId_open,
         };
         
-        consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
+        consoleLogger.order(`${this.symbol} open 주문 요청 !!`, orderParams);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
         .catch((e) => {
-            const errorMessage = `open error: ${e.stack || e}`;
-            fileLogger.error(errorMessage);
-            consoleLogger.error(errorMessage);
+            fileLogger.error('open error:', e);
+            consoleLogger.error('open error:', e);
             consoleLogger.error('open error >>> reset후 재주문 요청');
             this.reset();
             this.open();
@@ -192,12 +191,11 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 1차 청산 설정\n${JSON.stringify(exit1Params, null, 2)}`);
+        consoleLogger.order(`${this.symbol} 1차 청산 설정`, exit1Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params)
             .catch((e) => {
-                const errorMessage = `order exit1 error: ${e.stack || e}`;
-                fileLogger.error(errorMessage);
-                consoleLogger.error(errorMessage);
+                fileLogger.error('order exit1 error:', e);
+                consoleLogger.error('order exit1 error:', e);
                 consoleLogger.error('order exit1 error 강제 청산 실행');
                 const marketCloseParams = { ...exit1Params }; 
                 delete marketCloseParams.triggerPrice;
@@ -225,12 +223,11 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 2차 청산 설정\n${JSON.stringify(exit2Params, null, 2)}`);
+        consoleLogger.order(`${this.symbol} 2차 청산 설정`, exit2Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit2Params)
             .catch((e) => {
-                const errorMessage = `order exit2 error: ${e.stack || e}`;
-                fileLogger.error(errorMessage);
-                consoleLogger.error(errorMessage);
+                fileLogger.error('order exit2 error:', e);
+                consoleLogger.error('order exit2 error:', e);
                 consoleLogger.error('order exit2 error 강제 청산 실행');
                 
                 const marketCloseParams = { ...exit2Params }; 
@@ -283,12 +280,11 @@ class alogo2{
                 orderLinkId : this.orderId_exit_1,
             };
             
-            consoleLogger.order(`${this.symbol} 1차 청산 주문 수정 요청\n${JSON.stringify(amend1Params, null, 2)}`);
+            consoleLogger.order(`${this.symbol} 1차 청산 주문 수정 요청`, amend1Params);
             ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend1Params)
                 .catch((e) => {
-                    const errorMessage = `amend exit1 error: ${e.stack || e}`;
-                    fileLogger.error(errorMessage);
-                    consoleLogger.error(errorMessage);
+                    fileLogger.error('amend exit1 error:', e);
+                    consoleLogger.error('amend exit1 error:', e);
                 });
         }
 
@@ -299,12 +295,11 @@ class alogo2{
             orderLinkId : this.orderId_exit_2,
         };
         
-        consoleLogger.order(`${this.symbol} 2차 청산 주문 수정 요청\n${JSON.stringify(amend2Params, null, 2)}`);
+        consoleLogger.order(`${this.symbol} 2차 청산 주문 수정 요청`, amend2Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend2Params)
             .catch((e) => {
-                const errorMessage = `amend exit2 error: ${e.stack || e}`;
-                fileLogger.error(errorMessage);
-                consoleLogger.error(errorMessage);
+                fileLogger.error('amend exit2 error:', e);
+                consoleLogger.error('amend exit2 error:', e);
             });
 
 
@@ -383,9 +378,8 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            const errorMessage = `${this.symbol} getActiveOrders (exit1) failed: ${error.stack || error}`;
-            consoleLogger.error(errorMessage);
-            fileLogger.error(errorMessage);
+            consoleLogger.error(`${this.symbol} getActiveOrders (exit1) failed:`, error);
+            fileLogger.error(`${this.symbol} getActiveOrders (exit1) failed:`, error);
         });
 
         const res2 = await rest_client.getActiveOrders({
@@ -396,9 +390,8 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            const errorMessage = `${this.symbol} getActiveOrders (exit2) failed: ${error.stack || error}`;
-            consoleLogger.error(errorMessage);
-            fileLogger.error(errorMessage);
+            consoleLogger.error(`${this.symbol} getActiveOrders (exit2) failed:`, error);
+            fileLogger.error(`${this.symbol} getActiveOrders (exit2) failed:`, error);
         });
 
         if(res1?.result?.list?.length > 0 && res2?.result?.list?.length > 0){
@@ -430,9 +423,8 @@ class alogo2{
                 await this.updateStop()
             }
         } catch (error) {
-            const errorMessage = `scheduleFunc error: ${error.stack || error}`;
-            fileLogger.error(errorMessage);
-            consoleLogger.error(errorMessage);
+            consoleLogger.error('scheduleFunc error:', error);
+            fileLogger.error('scheduleFunc error:', error);
         }
 
 
@@ -467,13 +459,12 @@ class alogo2{
             orderLinkId : this.orderId_open,
         };
         
-        consoleLogger.order(`${this.symbol} open 주문 요청 !!\n${JSON.stringify(orderParams, null, 2)}`);
+        consoleLogger.order(`${this.symbol} open 주문 요청 !!`, orderParams);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
         .catch((e) => {
-           const errorMessage = `open_test error: ${e.stack || e}`;
-           fileLogger.error(errorMessage);
-           consoleLogger.error(errorMessage);
+           consoleLogger.error('open_test error:', e);
+           fileLogger.error('open_test error:', e);
         })
 
     }

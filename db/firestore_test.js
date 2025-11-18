@@ -1,5 +1,6 @@
 const { db } = require('./firebaseConfig.js');
 const { collection, addDoc, getDocs, query, where } = require('firebase/firestore');
+const { consoleLogger } = require('../common/logger.js');
 
 // Firestore에 데이터를 추가하는 예제 함수
 async function addUser(name, email) {
@@ -12,7 +13,7 @@ async function addUser(name, email) {
     console.log("Document written with ID: ", docRef.id);
     return docRef.id;
   } catch (e) {
-    console.error("Error adding document: ", e);
+    consoleLogger.error("Error adding document: ", e);
   }
 }
 
@@ -22,10 +23,10 @@ async function getAllUsers() {
     const querySnapshot = await getDocs(collection(db, "users"));
     console.log("All users:");
     querySnapshot.forEach((doc) => {
-      console.log(`${doc.id} => ${JSON.stringify(doc.data())}`);
+      consoleLogger.info(`${doc.id} =>`, doc.data());
     });
   } catch (e) {
-    console.error("Error getting documents: ", e);
+    consoleLogger.error("Error getting documents: ", e);
   }
 }
 
@@ -44,12 +45,12 @@ async function findUserByEmail(email) {
       
       console.log(`User found with email ${email}:`);
       querySnapshot.forEach((doc) => {
-        console.log(`${doc.id} => ${JSON.stringify(doc.data())}`);
+        consoleLogger.info(`${doc.id} =>`, doc.data());
       });
       return querySnapshot.docs[0].data();
 
     } catch (e) {
-      console.error("Error finding document: ", e);
+      consoleLogger.error("Error finding document: ", e);
     }
   }
 
@@ -73,7 +74,4 @@ async function main() {
   console.log("\n--- Firestore Test End ---");
 }
 
-// 메인 함수 실행
-// 중요: 이 스크립트를 실행하기 전에 common/firebaseConfig.js 파일에
-//      자신의 Firebase 프로젝트 설정 값을 입력해야 합니다.
-main().catch(console.error);
+main().catch(error => consoleLogger.error('Main test function failed:', error));

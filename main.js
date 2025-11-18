@@ -27,7 +27,7 @@ async function main(){//웹소켓 셋 및 스케줄링
     await signInWithEmailAndPassword(auth, email, password);
     consoleLogger.info("Firebase 로그인 성공.");
   } catch (error) {
-    consoleLogger.error(`Firebase 로그인 실패: ${error.message}`);
+    consoleLogger.error("Firebase 로그인 실패:", error);
     process.exit(1); // 로그인 실패 시 프로세스 종료
   }
 
@@ -59,9 +59,8 @@ async function main(){//웹소켓 셋 및 스케줄링
         })
         .catch(error => {
             // mainTask의 오류 또는 타임아웃 오류가 여기로 들어옵니다.
-            const errorMessage = `cron 40 59 * * * * 오류발생: ${error.stack || JSON.stringify(error)}`;
-            consoleLogger.error(errorMessage);
-            fileLogger.error(errorMessage);
+            consoleLogger.error('cron 40 59 * * * * 오류발생:', error);
+            fileLogger.error('cron 40 59 * * * * 오류발생:', error);
         })
         .finally(() => {
             console.log(" ");
@@ -99,24 +98,21 @@ ws_client.on('update', async (res) => {
       });
     }
   } catch(e) {
-    const errorMessage = `ws_client 'update' 이벤트 처리 중 오류 발생: ${e.stack || JSON.stringify(e)}`;
-    consoleLogger.error(errorMessage);
-    fileLogger.error(errorMessage);
+    consoleLogger.error('ws_client \'update\' 이벤트 처리 중 오류 발생:', e);
+    fileLogger.error('ws_client \'update\' 이벤트 처리 중 오류 발생:', e);
   }
 });
 
 // 연결이 닫혔을 때, 그 이유를 포함하여 로그를 남깁니다.
 ws_client.on('close', (event) => {
-  const closeReason = `ws connection closed. Event: ${JSON.stringify(event, null, 2)}`;
-  consoleLogger.warn(closeReason);
-  fileLogger.warn(closeReason);
+  consoleLogger.warn('ws connection closed. Event:', event);
+  fileLogger.warn('ws connection closed. Event:', event);
 });
 
 // 에러 발생 시, 상세한 에러 정보를 로그로 남깁니다.
 ws_client.on('error', (err) => {
-  const errorMessage = `ws connection error: ${err.stack || JSON.stringify(err, null, 2)}`;
-  consoleLogger.error(errorMessage);
-  fileLogger.error(errorMessage);
+  consoleLogger.error('ws connection error:', err);
+  fileLogger.error('ws connection error:', err);
 });
 
 ws_client.on('open', ({ wsKey, event }) => {
