@@ -6,10 +6,16 @@ const alogo2 = require('./alogs/alog2Class.js');
 const { fileLogger, consoleLogger } = require('./common/logger.js'); // 로거 import
 const cron = require('node-cron');
 
-const symbols = ['SOLUSDT', 'XRPUSDT'];
-
 const { auth } = require('./db/firebaseConfig.js');
 const { signInWithEmailAndPassword } = require("firebase/auth");
+
+
+const symbols = ['SOLUSDT', 'XRPUSDT'];
+
+const alog2Objs = symbols.reduce((acc, symbol) => {
+  acc[symbol] = new alogo2(symbol);
+  return acc;
+}, {});
 
 
 async function main(){//웹소켓 셋 및 스케줄링
@@ -25,13 +31,8 @@ async function main(){//웹소켓 셋 및 스케줄링
     process.exit(1); // 로그인 실패 시 프로세스 종료
   }
 
-  const alog2Objs = symbols.reduce((acc, symbol) => {
-    acc[symbol] = new alogo2(symbol);
-    return acc;
-  }, {});
 
   await Promise.all(Object.values(alog2Objs).map(obj => obj.set()));
-
 
   // --- 안전장치 1: 실행 잠금 ---
   let isCronRunning = false;
