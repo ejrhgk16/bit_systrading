@@ -34,21 +34,13 @@ async function main(){//웹소켓 셋 및 스케줄링
 
   await Promise.all(Object.values(alog2Objs).map(obj => obj.set()));
 
-  // --- 안전장치 1: 실행 잠금 ---
-  let isCronRunning = false;
+
 
   // --- 안전장치 2: 타임아웃 시간 (5분) ---
-  const CRON_JOB_TIMEOUT_MS = 5 * 60 * 1000;
+  const CRON_JOB_TIMEOUT_MS = 10 * 60 * 1000;
 
   cron.schedule('40 59 * * * *', () => {
     consoleLogger.info("cron 40 59 * * * * 실행");
-
-    if (isCronRunning) {
-        consoleLogger.warn('이전 cron 작업이 아직 실행 중이므로 이번 작업은 건너뜁니다.');
-        return;
-    }
-
-    isCronRunning = true; // 작업 시작, 잠금!
 
     // 실제 작업 내용
     const mainTask = Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));
@@ -72,7 +64,6 @@ async function main(){//웹소켓 셋 및 스케줄링
             fileLogger.error(errorMessage);
         })
         .finally(() => {
-            isCronRunning = false; // 작업이 성공하든, 실패하든, 타임아웃되든 잠금을 해제합니다.
             console.log(" ");
         });
 
@@ -80,12 +71,12 @@ async function main(){//웹소켓 셋 및 스케줄링
     timezone: 'UTC'
   });
 
-  cron.schedule('59 23 * * *', async () => { // 매일 23:59분 마다
-    consoleLogger.info("=====================================================================")
-    //하루 거래내역및 pnl 출력 추가 할 거
-  }, {
-    timezone: 'UTC'
-  });
+  // cron.schedule('0 0 * * *', async () => { // 매일 23:59분 마다
+  //   consoleLogger.info("=====================================================================")
+  //   //하루 거래내역및 pnl 출력 추가 할 거
+  // }, {
+  //   timezone: 'UTC'
+  // });
 
   ws_client.subscribeV5('order', 'linear');
 

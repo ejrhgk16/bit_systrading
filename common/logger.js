@@ -47,7 +47,7 @@ const fileLogger = winston.createLogger({
     winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
-    new winston.transports.File({ filename: `logs/app-${getTodayDate()}.log` })
+    new winston.transports.File({ filename: `logs/error/${getTodayDate()}.log`})
   ]
 });
 
@@ -63,7 +63,8 @@ const consoleLogger = winston.createLogger({
     winston.format.printf(info => `[${info.timestamp} ${info.level}] ${info.message}`)
   ),
   transports: [
-    new winston.transports.Console() // 콘솔에 출력
+    //new winston.transports.Console() // 콘솔에 출력
+    new winston.transports.File({ filename: `logs/all/${getTodayDate()}.log`})
   ]
 });
 
