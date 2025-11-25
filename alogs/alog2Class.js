@@ -39,7 +39,7 @@ class alogo2{
         this.isOpenOrderFilled = false
         this.isPartialExit = false;// 부분익절 여부
 
-        this.entry_allow = false //볼밴 돌파상태, adx20이상, ema 5, 10
+        this.entry_allow = false // adx20이상, 증가여부
     }
 
     async set(){
@@ -67,7 +67,7 @@ class alogo2{
         const alog2State = { ...this };
         await setTradeStatus(docId, alog2State)
 
-        consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ' + this.capital)
+        consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ', this)
         
     }
 

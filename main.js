@@ -36,11 +36,12 @@ async function main(){//웹소켓 셋 및 스케줄링
 
 
 
-  // --- 안전장치 2: 타임아웃 시간 (5분) ---
+  // --- 타임아웃 시간 10분 ---
   const CRON_JOB_TIMEOUT_MS = 10 * 60 * 1000;
+  const cronExpression = '1 0 */4 * * *';
 
-  cron.schedule('0 */4 * * *', () => {
-    consoleLogger.info("cron 0 */4 * * * 실행");
+  cron.schedule(cronExpression, () => {
+    consoleLogger.info("4시간 캔들용 작업 실행");
 
     // 실제 작업 내용
     const mainTask = Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));
@@ -52,15 +53,15 @@ async function main(){//웹소켓 셋 및 스케줄링
         }, CRON_JOB_TIMEOUT_MS);
     });
 
-    // Promise.race: 실제 작업과 타임아웃 중 먼저 끝나는 쪽을 따릅니다.
+    // Promise.race
     Promise.race([mainTask, timeoutPromise])
         .then(() => {
-            consoleLogger.info("cron 40 59 * * * * 완료");
+            consoleLogger.info("4시간 캔들용 작업 완료");
         })
         .catch(error => {
-            // mainTask의 오류 또는 타임아웃 오류가 여기로 들어옵니다.
-            consoleLogger.error('cron 40 59 * * * * 오류발생:', error);
-            fileLogger.error('cron 40 59 * * * * 오류발생:', error);
+            // mainTask의 오류 또는 타임아웃 오류
+            consoleLogger.error('4시간 캔들용 작업 오류발생:', error);
+            fileLogger.error('4시간 캔들용 작업 오류발생:', error);
         })
         .finally(() => {
             console.log(" ");
