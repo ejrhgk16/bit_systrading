@@ -77,9 +77,9 @@ class alogo2{
         const data = await getKline(this.symbol, '240', 200)
         
         const latestCandle = data[data.length - 1];
-        const current_close = latestCandle[4];
+        const current_open = latestCandle[1];
  
-        const bbObj =  calculateBB(data, 20, 2, 1);
+        const bbObj =  calculateBB(data, 20, 2, 1);//직전봉
 
         const adxObj = calculateDMI(data, 14, 1);//직전봉
         const adxObj2 = calculateDMI(data, 14, 2);//전전봉
@@ -96,15 +96,15 @@ class alogo2{
         }
 
         //포지션타입계산 
-        if(current_close > bbObj.upper){
+        if(current_open > bbObj.upper){
 
-            if(current_close > ema_5 && current_close > ema_10){
+            if(current_open > ema_5 && current_open > ema_10){
                 this.positionType = 'long'
             }           
 
-        }else if(current_close < bbObj.lower){
+        }else if(current_open < bbObj.lower){
             
-            if(current_close < ema_5 && current_close < ema_10){
+            if(current_open < ema_5 && current_open < ema_10){
                 this.positionType = 'short'
             }
 
@@ -112,13 +112,13 @@ class alogo2{
             this.positionType = null
         }
 
-        consoleLogger.info(`${this.symbol} -- current_close: ${current_close}, positionType: ${this.positionType}, entry_allow: ${this.entry_allow}`);
+        consoleLogger.info(`${this.symbol} -- current_open: ${current_open}, positionType: ${this.positionType}, entry_allow: ${this.entry_allow}`);
 
         if(this.positionType == null || this.entry_allow == false){
             return
         }
 
-        const rawOrderSize = this.calculatePositionSize(current_close, (ema_5 + ema_10) / 2);
+        const rawOrderSize = this.calculatePositionSize(current_open, (ema_5 + ema_10) / 2);
         this.orderSize = Math.round(rawOrderSize * this.qtyMultiplier) / this.qtyMultiplier;
         
         this.exit_size_1 = Math.round((this.orderSize / 2) * this.qtyMultiplier) / this.qtyMultiplier;
@@ -126,7 +126,7 @@ class alogo2{
 
         const side = this.positionType == 'long' ? 'Buy' : 'Sell'
 
-        this.openPrice = current_close
+        this.openPrice = current_open
 
         this.setNewOrderId()
 
@@ -457,9 +457,9 @@ class alogo2{
         const data = await getKline(this.symbol, '240', 200)
 
         const latestCandle = data[data.length - 1];
-        const current_close = latestCandle[4];
+        const current_open = latestCandle[4];
 
-        const rawOrderSize = this.capital / current_close; 
+        const rawOrderSize = this.capital / current_open; 
         this.orderSize = Math.round(rawOrderSize * this.qtyMultiplier) / this.qtyMultiplier;
         
         this.exit_size_1 = Math.round((this.orderSize / 2) * this.qtyMultiplier) / this.qtyMultiplier;
@@ -468,7 +468,7 @@ class alogo2{
         this.positionType = 'long'
         const side = this.positionType == 'long' ? 'Buy' : 'Sell'
 
-        this.openPrice = current_close
+        this.openPrice = current_open
 
         this.setNewOrderId()
 
