@@ -55,17 +55,17 @@ class alogo2{
         this.capital = Number(process.env["algo2_"+this.symbol+"_capital"])
         this.leverage = Number(process.env["algo2_"+this.symbol+"_leverage"] || 10);
 
-        // const docId = this.getTradeStatusDocId();
-        // const data = await getTradeStatus(docId)
+        const docId = this.getTradeStatusDocId();
+        const data = await getTradeStatus(docId)
 
-        // if(data){
-        //     Object.assign(this, data);
-        //     await this.doubleCheckStatus()
+        if(data){
+            Object.assign(this, data);
+            await this.doubleCheckStatus()
             
-        // }
+        }
 
-        // const alog2State = { ...this };
-        // await setTradeStatus(docId, alog2State)
+        const alog2State = { ...this };
+        await setTradeStatus(docId, alog2State)
 
         consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ' + this.capital)
         
