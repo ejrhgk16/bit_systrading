@@ -39,8 +39,8 @@ async function main(){//웹소켓 셋 및 스케줄링
   // --- 안전장치 2: 타임아웃 시간 (5분) ---
   const CRON_JOB_TIMEOUT_MS = 10 * 60 * 1000;
 
-  cron.schedule('40 59 * * * *', () => {
-    consoleLogger.info("cron 40 59 * * * * 실행");
+  cron.schedule('0 */4 * * *', () => {
+    consoleLogger.info("cron 0 */4 * * * 실행");
 
     // 실제 작업 내용
     const mainTask = Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));

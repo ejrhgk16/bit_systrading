@@ -226,8 +226,78 @@ function calculateEMA(candles, period, when = 0) {
   }
 }
 
+/**
+ * Alligator 지표를 계산합니다.
+ * @param {Array} candles - K-line 데이터 배열. 오래된 데이터가 앞에 오도록 정렬되어 있어야 합니다.
+ * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
+ * @returns {{jaw: number, teeth: number, lips: number} | null} - Alligator 값
+ */
+function calculateAlligator(candles, when = 0) {
+  try {
+    const jawPeriod = 21;
+    const teethPeriod = 13;
+    const lipsPeriod = 8;
+
+    const jawShift = 8;
+    const teethShift = 5;
+    const lipsShift = 3;
+
+    // 필요한 최소 데이터 길이를 계산합니다.
+    const requiredLength = Math.max(jawPeriod + jawShift, teethPeriod + teethShift, lipsPeriod + lipsShift) + when;
+    if (!candles || candles.length < requiredLength) {
+      consoleLogger.error(`Alligator 계산을 위한 충분한 캔들 데이터가 없습니다. (필요: ${requiredLength}, 확보: ${candles.length})`);
+      return null;
+    }
+
+    const medianPrices = candles.map(c => (parseFloat(c[2]) + parseFloat(c[3])) / 2);
+
+    const calculateSmmaValues = (data, period) => {
+        const multiplier = 1 / period; // SMMA(Smoothed Moving Average) 가중치
+        let smmaValues = [];
+
+        // 첫 SMMA는 단순 이동 평균(SMA)으로 시작
+        let sum = 0;
+        for (let i = 0; i < period; i++) {
+            sum += data[i];
+        }
+        smmaValues[period - 1] = sum / period;
+
+        // 이후 SMMA를 순차적으로 계산
+        for (let i = period; i < data.length; i++) {
+            smmaValues[i] = (data[i] * multiplier) + (smmaValues[i-1] * (1 - multiplier));
+        }
+        return smmaValues;
+    };
+    
+    const jawValues = calculateSmmaValues(medianPrices, jawPeriod);
+    const teethValues = calculateSmmaValues(medianPrices, teethPeriod);
+    const lipsValues = calculateSmmaValues(medianPrices, lipsPeriod);
+
+    const jawIndex = jawValues.length - 1 - when - jawShift;
+    const teethIndex = teethValues.length - 1 - when - teethShift;
+    const lipsIndex = lipsValues.length - 1 - when - lipsShift;
+
+    if (jawIndex < 0 || teethIndex < 0 || lipsIndex < 0) {
+        consoleLogger.error(`Alligator 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
+        return null;
+    }
+
+    return {
+      jaw: jawValues[jawIndex],
+      teeth: teethValues[teethIndex],
+      lips: lipsValues[lipsIndex],
+    };
+
+  } catch (error) {
+    consoleLogger.error('Alligator 계산 중 오류 발생:', error);
+    return null;
+  }
+}
+
+
 module.exports = {
     calculateDMI,
     calculateBB,
-    calculateEMA
+    calculateEMA,
+    calculateAlligator
 };

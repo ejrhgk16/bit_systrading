@@ -1,7 +1,7 @@
 
 //전략 : 변동성(볼밴)
 const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('../common/client');
-const {calculateDMI, calculateBB, calculateEMA} = require('../common/indicatior');
+const {calculateDMI, calculateBB, calculateEMA, calculateAlligator} = require('../common/indicatior');
 const {getKline} = require('../common/util');
 require('dotenv').config();
 const {getTradeStatus, setTradeStatus, addTradeLog } = require('../db/firestoreFunc.js');
@@ -16,6 +16,7 @@ class alogo2{
 
         this.symbol = symbol;
         this.capital = 0.0;// 할당된 자금 설정필요
+        this.max_risk_per_trade = 0.05; // 5%
         
         this.leverage = 10; // 기본값
 
@@ -32,7 +33,7 @@ class alogo2{
 
         this.orderId_open = null//오더링크아이디로 용
         this.orderId_exit_1 = null//오더링크아이디 용
-        this.orderId_exit_2 = null//오더링크아이디 용 
+        this.orderId_exit_2 = null//오더링크아이디 용
 
         this.positionType = null;//long short null
         this.isOpenOrderFilled = false
@@ -54,17 +55,17 @@ class alogo2{
         this.capital = Number(process.env["algo2_"+this.symbol+"_capital"])
         this.leverage = Number(process.env["algo2_"+this.symbol+"_leverage"] || 10);
 
-        const docId = this.getTradeStatusDocId();
-        const data = await getTradeStatus(docId)
+        // const docId = this.getTradeStatusDocId();
+        // const data = await getTradeStatus(docId)
 
-        if(data){
-            Object.assign(this, data);
-            await this.doubleCheckStatus()
+        // if(data){
+        //     Object.assign(this, data);
+        //     await this.doubleCheckStatus()
             
-        }
+        // }
 
-        const alog2State = { ...this };
-        await setTradeStatus(docId, alog2State)
+        // const alog2State = { ...this };
+        // await setTradeStatus(docId, alog2State)
 
         consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ' + this.capital)
         
@@ -73,32 +74,37 @@ class alogo2{
 
     async open(){//포지션 타입, 스탑로스 계산 -> 주문 // 포지션 없는경우 반복실행되어야함
 
-        const data_60m = await getKline(this.symbol, '60', 125)
+        const data = await getKline(this.symbol, '240', 200)
         
-
-        const latestCandle = data_60m[data_60m.length - 1];
+        const latestCandle = data[data.length - 1];
         const current_close = latestCandle[4];
  
+        const bbObj =  calculateBB(data, 20, 2, 1);
 
-        const bbObj =  calculateBB(data_60m, 120, 1, 0);
+        const adxObj = calculateDMI(data, 14, 1);//직전봉
+        const adxObj2 = calculateDMI(data, 14, 2);//전전봉
 
-        const adxObj = calculateDMI(data_60m, 14, 0);
-        const ema_5 = calculateEMA(data_60m, 5, 0);
-        const ema_10 = calculateEMA(data_60m, 10, 0);
+        const alligatorObj = calculateAlligator(data, 0)
+        const ema_5 = alligatorObj.teeth//calculateEMA(data, 5, 0);
+        const ema_10 = alligatorObj.jaw//calculateEMA(data, 10, 0);
 
+        //adx 조건 계산
+        if(adxObj.adx >20 && adxObj.adx > adxObj2.adx){
+            this.entry_allow = true
+        }else{
+            this.entry_allow = false
+        }
 
-        //포지션타입계산 및 entry_allow 계산
+        //포지션타입계산 
         if(current_close > bbObj.upper){
 
-            if(adxObj.adx > 20 && current_close > ema_5 && current_close > ema_10){
-                this.entry_allow = true
+            if(current_close > ema_5 && current_close > ema_10){
                 this.positionType = 'long'
-            } 
+            }           
 
         }else if(current_close < bbObj.lower){
             
-            if(adxObj.adx > 20 && current_close < ema_5 && current_close < ema_10){
-                this.entry_allow = true
+            if(current_close < ema_5 && current_close < ema_10){
                 this.positionType = 'short'
             }
 
@@ -112,7 +118,7 @@ class alogo2{
             return
         }
 
-        const rawOrderSize = this.capital / current_close; 
+        const rawOrderSize = this.calculatePositionSize(current_close, (ema_5 + ema_10) / 2);
         this.orderSize = Math.round(rawOrderSize * this.qtyMultiplier) / this.qtyMultiplier;
         
         this.exit_size_1 = Math.round((this.orderSize / 2) * this.qtyMultiplier) / this.qtyMultiplier;
@@ -148,9 +154,11 @@ class alogo2{
     
     async openOrderFilledCallback(){//오픈 포지션 체결되면 스탑설정 1번실행
 
-        const data_60m = await getKline(this.symbol, '60', 50)
-        let ema_5 = calculateEMA(data_60m, 5, 0);
-        let ema_10 = calculateEMA(data_60m, 10, 0);
+        const data = await getKline(this.symbol, '240', 200)
+
+        const alligatorObj = calculateAlligator(data, 0)
+        let ema_5 = alligatorObj.teeth//calculateEMA(data, 5, 0);
+        let ema_10 = alligatorObj.jaw//calculateEMA(data, 10, 0);
 
         ema_5 = Math.round(ema_5 * this.priceMultiplier) / this.priceMultiplier;
         ema_10 = Math.round(ema_10 * this.priceMultiplier) / this.priceMultiplier;
@@ -246,9 +254,11 @@ class alogo2{
 
     async updateStop(){//포지션이있는경우 반복되어야함
 
-        const data_60m = await getKline(this.symbol, '60', 50);
-        let ema_5 = calculateEMA(data_60m, 5, 0);
-        let ema_10 = calculateEMA(data_60m, 10, 0);
+        const data = await getKline(this.symbol, '240', 200);
+
+        const alligatorObj = calculateAlligator(data, 0)
+        let ema_5 = alligatorObj.teeth//calculateEMA(data, 5, 0);
+        let ema_10 = alligatorObj.jaw//calculateEMA(data, 10, 0);
 
         ema_5 = Math.round(ema_5 * this.priceMultiplier) / this.priceMultiplier;
         ema_10 = Math.round(ema_10 * this.priceMultiplier) / this.priceMultiplier;
@@ -415,6 +425,18 @@ class alogo2{
 
     }
 
+    calculatePositionSize(entry_price, avg_exit_price) {
+        const max_loss_amount = this.capital * this.max_risk_per_trade;
+        const loss_per_unit = Math.abs(entry_price - avg_exit_price);
+        if (loss_per_unit === 0) {
+            return 0; // Prevent division by zero
+        }
+        const quantity_by_risk = max_loss_amount / loss_per_unit;
+        const max_quantity_by_capital = this.capital / entry_price;
+        const final_quantity = Math.min(quantity_by_risk, max_quantity_by_capital);
+        return final_quantity;
+    }
+
     async scheduleFunc(){
         try {
             if(!this.isOpenOrderFilled){
@@ -432,9 +454,9 @@ class alogo2{
 
     async open_test(){//테스트용 강제로 주문체결
 
-        const data_60m = await getKline(this.symbol, '60', 125)
+        const data = await getKline(this.symbol, '240', 200)
 
-        const latestCandle = data_60m[data_60m.length - 1];
+        const latestCandle = data[data.length - 1];
         const current_close = latestCandle[4];
 
         const rawOrderSize = this.capital / current_close; 
