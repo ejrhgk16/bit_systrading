@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('./common/client');
 const { v4: uuidv4 } = require('uuid');

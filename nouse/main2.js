@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 const { WebsocketClient, WS_KEY_MAP} = require('bybit-api');
 const { v4: uuidv4 } = require('uuid');

@@ -45,7 +45,7 @@ require.cache[require.resolve('../common/util.js')] = { exports: smartMockUtil }
 
 
 // --- main.js 로직 시작 ---
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const { ws_client } = require('../common/client');
 const alogo2 = require('../alogs/alog2Class.js');
 const { fileLogger, consoleLogger } = require('../common/logger.js');

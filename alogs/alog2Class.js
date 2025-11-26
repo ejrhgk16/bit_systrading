@@ -3,7 +3,7 @@
 const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('../common/client');
 const {calculateDMI, calculateBB, calculateEMA, calculateAlligator} = require('../common/indicatior');
 const {getKline} = require('../common/util');
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const {getTradeStatus, setTradeStatus, addTradeLog } = require('../db/firestoreFunc.js');
 const {fileLogger, consoleLogger} = require('../common/logger')
 

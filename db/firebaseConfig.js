@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 // Import the functions you need from the SDKs you need
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const { RestClientV5, WebsocketClient, WebsocketAPIClient, WS_KEY_MAP } = require('bybit-api');
 const {fileLogger} = require('./logger')
 

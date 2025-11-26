@@ -50,7 +50,7 @@ consoleLogger.warn('🚨 최종 흐름 테스트: 실제 주문이 발생합니�
 // // -------------------------------------
 
 // --- main.js 로직 시작 ---
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const { ws_client } = require('../common/client');
 const alogo2 = require('../alogs/alog2Class.js');
 const { fileLogger } = require('../common/logger.js');

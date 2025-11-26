@@ -1,5 +1,5 @@
 
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const { signInWithEmailAndPassword } = require("firebase/auth");
 const { auth } = require('../db/firebaseConfig.js');
 const { ws_client } = require('../common/client');
