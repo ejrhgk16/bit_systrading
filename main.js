@@ -10,7 +10,7 @@ const { auth } = require('./db/firebaseConfig.js');
 const { signInWithEmailAndPassword } = require("firebase/auth");
 
 
-const symbols = ['SOLUSDT', 'XRPUSDT'];
+const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 
 const alog2Objs = symbols.reduce((acc, symbol) => {
   acc[symbol] = new alogo2(symbol);

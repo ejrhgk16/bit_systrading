@@ -24,11 +24,11 @@ async function main() {
   console.log(`'${symbol}' ${interval}봉 K-line 데이터를 ${limit}개 가져옵니다...`);
   const klineData = await getKline(symbol, interval, limit);
 
-  // if (!klineData || klineData.length < limit) {
-  //   console.error('테스트를 위한 K-line 데이터를 충분히 가져오지 못했습니다.');
-  //   process.exit(1);
-  // }
-  // console.log(`데이터 ${klineData.length}개 수신 완료.`);
+  if (!klineData || klineData.length < limit) {
+    console.error('테스트를 위한 K-line 데이터를 충분히 가져오지 못했습니다.');
+    process.exit(1);
+  }
+  console.log(`데이터 ${klineData.length}개 수신 완료.`);
 
   // // --- EMA 테스트 ---
   // await runTest('calculateEMA - (period: 10, when: 0)', async () => {
@@ -49,29 +49,29 @@ async function main() {
   //   console.assert(typeof ema === 'number', 'EMA 결과는 숫자여야 합니다.');
   // });
 
-  // // --- BB 테스트 ---
-  // await runTest('calculateBB - (period: 120, multiplier: 1, when: 0)', async () => {
-  //   const period = 120;
-  //   const multiplier = 1;
-  //   const when = 0;
-  //   const bb = calculateBB(klineData, period, multiplier, when);
+  // --- BB 테스트 ---
+  await runTest('calculateBB - (period: 20, multiplier: 2, when: 1)', async () => {
+    const period = 20;
+    const multiplier = 2;
+    const when = 1;
+    const bb = calculateBB(klineData, period, multiplier, when);
 
-  //   console.log(`  BB (120, 1, 1) Result:`, bb);
-  //   console.assert(typeof bb === 'object', 'BB 결과는 객체여야 합니다.');
-  //   console.assert(bb.upper && bb.middle && bb.lower, 'BB 객체에 upper, middle, lower 속성이 있어야 합니다.');
-  //   console.assert(bb.upper > bb.middle && bb.middle > bb.lower, 'BB 값의 관계가 올바르지 않습니다.');
-  // });
+    console.log(`  BB (20, 2, 1) Result:`, bb);
+    console.assert(typeof bb === 'object', 'BB 결과는 객체여야 합니다.');
+    console.assert(bb.upper && bb.middle && bb.lower, 'BB 객체에 upper, middle, lower 속성이 있어야 합니다.');
+    console.assert(bb.upper > bb.middle && bb.middle > bb.lower, 'BB 값의 관계가 올바르지 않습니다.');
+  });
 
-  // // --- DMI 테스트 ---
-  // await runTest('calculateDMI - (period: 14, when: 0)', async () => {
-  //   const period = 14;
-  //   const when = 0;
-  //   const dmi = calculateDMI(klineData, period, when);
+  // --- DMI 테스트 ---
+  await runTest('calculateDMI - (period: 14, when: 1)', async () => {
+    const period = 14;
+    const when = 1;
+    const dmi = calculateDMI(klineData, period, when);
 
-  //   console.log(`  DMI (14, 1) Result:`, dmi);
-  //   console.assert(typeof dmi === 'object', 'DMI 결과는 객체여야 합니다.');
-  //   console.assert(dmi.adx !== undefined && dmi.pdi !== undefined && dmi.mdi !== undefined, 'DMI 객체에 adx, pdi, mdi 속성이 있어야 합니다.');
-  // });
+    console.log(`  DMI (14, 1) Result:`, dmi);
+    console.assert(typeof dmi === 'object', 'DMI 결과는 객체여야 합니다.');
+    console.assert(dmi.adx !== undefined && dmi.pdi !== undefined && dmi.mdi !== undefined, 'DMI 객체에 adx, pdi, mdi 속성이 있어야 합니다.');
+  });
 
   // --- Alligator 테스트 ---
   await runTest('calculateAlligator - (when: 0) - Current', async () => {
