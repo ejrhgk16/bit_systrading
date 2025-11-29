@@ -19,6 +19,9 @@ const alog2Objs = symbols.reduce((acc, symbol) => {
 
 
 async function main(){//웹소켓 셋 및 스케줄링
+
+  consoleLogger.info("env_version : ", process.env.env_ver)
+
     // --- 1. Firebase 인증 ---
   try {
     consoleLogger.info("Firebase 로그인을 시도합니다...");
