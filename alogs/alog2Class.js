@@ -25,9 +25,7 @@ class alogo2{
 
         this.orderSize = 0.0 // 주문 수량
 
-        this.orderPrice = 0.0;
-
-
+        this.openPrice = 0.0;
         this.exit_price_1 = 0.0
         this.exit_price_2 = 0.0
 
@@ -43,6 +41,8 @@ class alogo2{
         this.isPartialExit = false;// 부분익절 여부
 
         this.entry_allow = false // adx20이상, 증가여부
+
+        
     }
 
     async set(){
@@ -360,7 +360,7 @@ class alogo2{
             this.isOpenOrderFilled = true
             await this.openOrderFilledCallback()
         }
-        
+
         if(this.orderId_exit_1 == dataObj.orderLinkId){
             this.isPartialExit = true
 
