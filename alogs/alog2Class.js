@@ -360,6 +360,7 @@ class alogo2{
             this.isOpenOrderFilled = true
             await this.openOrderFilledCallback()
         }
+        
         if(this.orderId_exit_1 == dataObj.orderLinkId){
             this.isPartialExit = true
 

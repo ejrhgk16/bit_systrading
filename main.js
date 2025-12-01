@@ -102,9 +102,17 @@ ws_client.on('update', async (res) => {
     if(res?.topic == "order"){
       const data = res?.data
       data.forEach(element => {
-        const alog2ObjTemp = alog2Objs_bb2[element.symbol]
-        if (alog2ObjTemp) {
-            alog2ObjTemp.orderEventHandle(element)
+        
+        const alog2ObjTemp_bb1 = alog2Objs_bb1[element.symbol]
+        if (alog2ObjTemp_bb1) {
+          alog2ObjTemp_bb1.orderEventHandle(element)
+        } else {
+            consoleLogger.warn(`수신된 주문 이벤트의 심볼(${element.symbol})에 해당하는 객체를 찾을 수 없습니다.`);
+        }
+
+        const alog2ObjTemp_bb2 = alog2Objs_bb2[element.symbol]
+        if (alog2ObjTemp_bb2) {
+          alog2ObjTemp_bb2.orderEventHandle(element)
         } else {
             consoleLogger.warn(`수신된 주문 이벤트의 심볼(${element.symbol})에 해당하는 객체를 찾을 수 없습니다.`);
         }
