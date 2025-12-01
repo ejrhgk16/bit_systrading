@@ -9,14 +9,17 @@ const {fileLogger, consoleLogger} = require('../common/logger')
 
 class alogo2{
 
-    constructor(symbol) {
+    constructor(symbol, std = 2) {
+
+        this.name = `alog2_${symbol}_bb${std}`;
 
         this.qtyMultiplier = 0// 수량설정을 위한 소수점 자릿수에 따른 승수
         this.priceMultiplier = 0
 
         this.symbol = symbol;
         this.capital = 0.0;// 할당된 자금 설정필요
-        this.max_risk_per_trade = 0.05; // 5%
+        this.max_risk_per_trade = 0.02; // 2%
+        this.std = std
         
         this.leverage = 10; // 기본값
 
@@ -67,7 +70,7 @@ class alogo2{
         const alog2State = { ...this };
         await setTradeStatus(docId, alog2State)
 
-        consoleLogger.info(this.symbol + ' 초기 설정 완료 captial : ', this)
+        consoleLogger.info(this.name + ' 초기 설정 완료 captial : ', this)
         
     }
 
@@ -79,7 +82,7 @@ class alogo2{
         const latestCandle = data[data.length - 1];
         const current_open = latestCandle[1];
  
-        const bbObj =  calculateBB(data, 20, 2, 1);//직전봉
+        const bbObj =  calculateBB(data, 20, this.std, 1);//직전봉
 
         const adxObj = calculateDMI(data, 14, 1);//직전봉
         const adxObj2 = calculateDMI(data, 14, 2);//전전봉
@@ -112,7 +115,7 @@ class alogo2{
             this.positionType = null
         }
 
-        consoleLogger.info(`${this.symbol} -- current_open: ${current_open}, positionType: ${this.positionType}, entry_allow: ${this.entry_allow}`);
+        consoleLogger.info(`${this.name} -- current_open: ${current_open}, positionType: ${this.positionType}, entry_allow: ${this.entry_allow}`);
 
         if(this.positionType == null || this.entry_allow == false){
             return
@@ -139,7 +142,7 @@ class alogo2{
             orderLinkId : this.orderId_open,
         };
         
-        consoleLogger.order(`${this.symbol} open 주문 요청 !!`, orderParams);
+        consoleLogger.order(`${this.name} open 주문 요청 !!`, orderParams);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
         .catch((e) => {
@@ -199,7 +202,7 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 1차 청산 설정`, exit1Params);
+        consoleLogger.order(`${this.name} 1차 청산 설정`, exit1Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params)
             .catch((e) => {
                 fileLogger.error('order exit1 error:', e);
@@ -231,7 +234,7 @@ class alogo2{
             timeInForce: "GoodTillCancel"
         };
         
-        consoleLogger.order(`${this.symbol} 2차 청산 설정`, exit2Params);
+        consoleLogger.order(`${this.name} 2차 청산 설정`, exit2Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit2Params)
             .catch((e) => {
                 fileLogger.error('order exit2 error:', e);
@@ -290,7 +293,7 @@ class alogo2{
                 orderLinkId : this.orderId_exit_1,
             };
             
-            consoleLogger.order(`${this.symbol} 1차 청산 주문 수정 요청`, amend1Params);
+            consoleLogger.order(`${this.name} 1차 청산 주문 수정 요청`, amend1Params);
             ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend1Params)
                 .catch((e) => {
                     fileLogger.error('amend exit1 error:', e);
@@ -305,7 +308,7 @@ class alogo2{
             orderLinkId : this.orderId_exit_2,
         };
         
-        consoleLogger.order(`${this.symbol} 2차 청산 주문 수정 요청`, amend2Params);
+        consoleLogger.order(`${this.name} 2차 청산 주문 수정 요청`, amend2Params);
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.amend', amend2Params)
             .catch((e) => {
                 fileLogger.error('amend exit2 error:', e);
@@ -350,8 +353,7 @@ class alogo2{
         const tradeLogDocId = "algo2_"+this.symbol
         addTradeLog(tradeLogDocId,data)
 
-
-        consoleLogger.order(`${this.symbol} ${dataObj.orderLinkId} 체결 -- side: ${dataObj.side}, price: ${dataObj.price}, qty: ${dataObj.qty} `);
+        consoleLogger.order(`${this.name} ${dataObj.orderLinkId} 체결 -- side: ${dataObj.side}, price: ${dataObj.price}, qty: ${dataObj.qty}, pnl:  ${dataObj.closedPnl}`);
 
         if(this.orderId_open == dataObj.orderLinkId){
 
@@ -375,7 +377,7 @@ class alogo2{
     }
 
     getTradeStatusDocId(){
-        const docId = 'algo2_'+this.symbol+'_trade_status'
+        const docId = 'algo2_'+this.name+'_trade_status'
         return docId
     }
 
@@ -388,8 +390,8 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            consoleLogger.error(`${this.symbol} getActiveOrders (exit1) failed:`, error);
-            fileLogger.error(`${this.symbol} getActiveOrders (exit1) failed:`, error);
+            consoleLogger.error(`${this.name} getActiveOrders (exit1) failed:`, error);
+            fileLogger.error(`${this.name} getActiveOrders (exit1) failed:`, error);
         });
 
         const res2 = await rest_client.getActiveOrders({
@@ -400,8 +402,8 @@ class alogo2{
             limit: 1,
         })
         .catch((error) => {
-            consoleLogger.error(`${this.symbol} getActiveOrders (exit2) failed:`, error);
-            fileLogger.error(`${this.symbol} getActiveOrders (exit2) failed:`, error);
+            consoleLogger.error(`${this.name} getActiveOrders (exit2) failed:`, error);
+            fileLogger.error(`${this.name} getActiveOrders (exit2) failed:`, error);
         });
 
         if(res1?.result?.list?.length > 0 && res2?.result?.list?.length > 0){
@@ -419,9 +421,9 @@ class alogo2{
 
     setNewOrderId(){//새로운 open 주문들어갈때마다 실행필
 
-        this.orderId_open = `algo2_${this.symbol}_open_${new Date().getTime()}`
-        this.orderId_exit_1 = `algo2_${this.symbol}_exit1_${new Date().getTime()}`
-        this.orderId_exit_2 = `algo2_${this.symbol}_exit2_${new Date().getTime()}`
+        this.orderId_open = `${this.name}_open_${new Date().getTime()}`
+        this.orderId_exit_1 = `${this.name}_exit1_${new Date().getTime()}`
+        this.orderId_exit_2 = `${this.name}_exit2_${new Date().getTime()}`
 
     }
 
@@ -481,7 +483,7 @@ class alogo2{
             orderLinkId : this.orderId_open,
         };
         
-        consoleLogger.order(`${this.symbol} open 주문 요청 !!`, orderParams);
+        consoleLogger.order(`${this.name} open 주문 요청 !!`, orderParams);
 
         ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', orderParams)
         .catch((e) => {

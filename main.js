@@ -12,8 +12,13 @@ const { signInWithEmailAndPassword } = require("firebase/auth");
 
 const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 
-const alog2Objs = symbols.reduce((acc, symbol) => {
-  acc[symbol] = new alogo2(symbol);
+const alog2Objs_bb2 = symbols.reduce((acc, symbol) => {
+  acc[symbol] = new alogo2(symbol, 2);
+  return acc;
+}, {});
+
+const alog2Objs_bb1 = symbols.reduce((acc, symbol) => {
+  acc[symbol] = new alogo2(symbol, 1);
   return acc;
 }, {});
 
@@ -35,7 +40,8 @@ async function main(){//웹소켓 셋 및 스케줄링
   }
 
 
-  await Promise.all(Object.values(alog2Objs).map(obj => obj.set()));
+  await Promise.all(Object.values(alog2Objs_bb2).map(obj => obj.set()));
+  await Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.set()));
 
 
 
@@ -47,8 +53,11 @@ async function main(){//웹소켓 셋 및 스케줄링
     consoleLogger.info("4시간 캔들용 작업 실행");
 
     // 실제 작업 내용
-    const mainTask = Promise.all(Object.values(alog2Objs).map(obj => obj.scheduleFunc()));
+    const mainTask1 = Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.scheduleFunc()));
+    const mainTask2 = Promise.all(Object.values(alog2Objs_bb2).map(obj => obj.scheduleFunc()));
 
+    const allMainTasks = Promise.all([mainTask1, mainTask2]);
+    
     // 타임아웃을 감시하는 프로미스
     const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -57,7 +66,7 @@ async function main(){//웹소켓 셋 및 스케줄링
     });
 
     // Promise.race
-    Promise.race([mainTask, timeoutPromise])
+    Promise.race([allMainTasks, timeoutPromise])
         .then(() => {
             consoleLogger.info("4시간 캔들용 작업 완료");
         })
@@ -93,7 +102,7 @@ ws_client.on('update', async (res) => {
     if(res?.topic == "order"){
       const data = res?.data
       data.forEach(element => {
-        const alog2ObjTemp = alog2Objs[element.symbol]
+        const alog2ObjTemp = alog2Objs_bb2[element.symbol]
         if (alog2ObjTemp) {
             alog2ObjTemp.orderEventHandle(element)
         } else {
