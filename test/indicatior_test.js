@@ -1,4 +1,4 @@
-const { calculateDMI, calculateBB, calculateEMA, calculateAlligator } = require('../common/indicatior');
+const { calculateDMI, calculateBB, calculateEMA, calculateAlligator, calculateKeltnerChannel } = require('../common/indicatior');
 const { getKline } = require('../common/util');
 
 // 테스트 실행 함수
@@ -17,7 +17,7 @@ async function runTest(testName, testFunction) {
 async function main() {
   // alogo2Class.js와 유사하게 데이터를 가져옵니다.
   // 여기서는 'BTCUSDT'와 '60'분봉을 예시로 사용합니다.
-  const symbol = 'SOLUSDT';
+  const symbol = 'ETHUSDT';
   const interval = '240';
   const limit = 200; // 지표 계산에 충분한 데이터 확보
 
@@ -50,7 +50,7 @@ async function main() {
   // });
 
   // --- BB 테스트 ---
-  await runTest('calculateBB - (period: 20, multiplier: 2, when: 1)', async () => {
+  await runTest('calculateBB - (period: 20, multiplier: 1, when: 1)', async () => {
     const period = 20;
     const multiplier = 2;
     const when = 1;
@@ -104,6 +104,20 @@ async function main() {
         console.assert(alligator.jaw !== undefined && alligator.teeth !== undefined && alligator.lips !== undefined, 'Alligator 객체에 jaw, teeth, lips 속성이 있어야 합니다.');
         console.assert(typeof alligator.jaw === 'number' && typeof alligator.teeth === 'number' && typeof alligator.lips === 'number', 'Alligator 값은 숫자여야 합니다.');
     }
+  });
+
+  // --- Keltner Channel 테스트 ---
+  await runTest('calculateKeltnerChannel - (period: 20, atrPeriod: 20, multiplier: 1, when: 1)', async () => {
+    const period = 5;
+    const atrPeriod = 5;
+    const multiplier = 1;
+    const when = 1;
+    const kc = calculateKeltnerChannel(klineData, period, atrPeriod, multiplier, when);
+
+    console.log(`  Keltner Channel (20, 10, 1, 1) Result:`, kc);
+    console.assert(typeof kc === 'object', 'KC 결과는 객체여야 합니다.');
+    console.assert(kc.upper && kc.middle && kc.lower, 'KC 객체에 upper, middle, lower 속성이 있어야 합니다.');
+    console.assert(kc.upper > kc.middle && kc.middle > kc.lower, 'KC 값의 관계가 올바르지 않습니다.');
   });
 
   console.log('\n모든 지표 테스트가 실제 데이터로 성공적으로 완료되었습니다.');

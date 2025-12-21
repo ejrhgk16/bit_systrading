@@ -17,10 +17,10 @@ const alog2Objs_bb2 = symbols.reduce((acc, symbol) => {
   return acc;
 }, {});
 
-const alog2Objs_bb1 = symbols.reduce((acc, symbol) => {
-  acc[symbol] = new alogo2(symbol, 1);
-  return acc;
-}, {});
+// const alog2Objs_bb1 = symbols.reduce((acc, symbol) => {
+//   acc[symbol] = new alogo2(symbol, 1);
+//   return acc;
+// }, {});
 
 
 async function main(){//웹소켓 셋 및 스케줄링
@@ -41,7 +41,7 @@ async function main(){//웹소켓 셋 및 스케줄링
 
 
   await Promise.all(Object.values(alog2Objs_bb2).map(obj => obj.set()));
-  await Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.set()));
+  // await Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.set()));
 
 
 
@@ -53,10 +53,10 @@ async function main(){//웹소켓 셋 및 스케줄링
     consoleLogger.info("4시간 캔들용 작업 실행");
 
     // 실제 작업 내용
-    const mainTask1 = Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.scheduleFunc()));
+    // const mainTask1 = Promise.all(Object.values(alog2Objs_bb1).map(obj => obj.scheduleFunc()));
     const mainTask2 = Promise.all(Object.values(alog2Objs_bb2).map(obj => obj.scheduleFunc()));
 
-    const allMainTasks = Promise.all([mainTask1, mainTask2]);
+    const allMainTasks = Promise.all([mainTask2]);
     
     // 타임아웃을 감시하는 프로미스
     const timeoutPromise = new Promise((_, reject) => {
@@ -103,17 +103,17 @@ ws_client.on('update', async (res) => {
       const data = res?.data
       data.forEach(element => {
 
-        const orderLinkId_algo2_bb1 = `alog2_${element.symbol}_bb1`
+        // const orderLinkId_algo2_bb1 = `alog2_${element.symbol}_bb1`
         const orderLinkId_alog2_bb2 = `alog2_${element.symbol}_bb2`
 
-        if((element.orderLinkId).indexOf(orderLinkId_algo2_bb1) > -1){
-          const alog2ObjTemp_bb1 = alog2Objs_bb1[element.symbol]
-          if (alog2ObjTemp_bb1) {
-            alog2ObjTemp_bb1.orderEventHandle(element)
-          } else {
-              consoleLogger.warn(`수신된 주문 이벤트의 심볼(${element.symbol})에 해당하는 객체를 찾을 수 없습니다.`);
-          }
-        }
+        // if((element.orderLinkId).indexOf(orderLinkId_algo2_bb1) > -1){
+        //   const alog2ObjTemp_bb1 = alog2Objs_bb1[element.symbol]
+        //   if (alog2ObjTemp_bb1) {
+        //     alog2ObjTemp_bb1.orderEventHandle(element)
+        //   } else {
+        //       consoleLogger.warn(`수신된 주문 이벤트의 심볼(${element.symbol})에 해당하는 객체를 찾을 수 없습니다.`);
+        //   }
+        // }
 
         if((element.orderLinkId).indexOf(orderLinkId_alog2_bb2) > -1){
           const alog2ObjTemp_bb2 = alog2Objs_bb2[element.symbol]

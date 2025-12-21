@@ -294,10 +294,90 @@ function calculateAlligator(candles, when = 0) {
   }
 }
 
+/**
+ * Keltner Channel을 계산합니다. (ATR 계산에 표준 EMA 방식 사용)
+ * @param {Array} candles - K-line 데이터 배열. 오래된 데이터가 앞에 오도록 정렬.
+ * @param {number} period - EMA 계산 기간 (일반적으로 20).
+ * @param {number} atrPeriod - ATR 계산 기간 (일반적으로 10).
+ * @param {number} multiplier - ATR에 곱할 값 (일반적으로 2).
+ * @param {number} when - 0:현재 캔들, 1:이전 캔들.
+ * @returns {{upper: number, middle: number, lower: number} | null} - Keltner Channel 값.
+ */
+function calculateKeltnerChannel(candles, period = 20, atrPeriod = 10, multiplier = 2, when = 0) {
+  try {
+    const requiredCandleLength = Math.max(period + when, atrPeriod + when + 1);
+    if (!candles || candles.length < requiredCandleLength) {
+      consoleLogger.error(`Keltner Channel 계산을 위한 충분한 데이터가 없습니다. (필요: ${requiredCandleLength}, 확보: ${candles.length})`);
+      return null;
+    }
+
+    // 1. 중심선 계산 (EMA of Close)
+    const middle = calculateEMA(candles, period, when);
+    if (middle === null) {
+      return null;
+    }
+
+    // 2. ATR 계산 (EMA of True Range)
+    let trueRanges = [];
+    for (let i = 1; i < candles.length; i++) {
+      const c = candles[i];
+      const p = candles[i-1];
+      const tr = Math.max(
+        parseFloat(c[2]) - parseFloat(c[3]), // high - low
+        Math.abs(parseFloat(c[2]) - parseFloat(p[4])), // abs(high - prev close)
+        Math.abs(parseFloat(c[3]) - parseFloat(p[4]))  // abs(low - prev close)
+      );
+      trueRanges.push(tr);
+    }
+
+    if (trueRanges.length < atrPeriod) {
+        consoleLogger.error('Keltner Channel의 ATR 계산을 위한 충분한 TR 데이터가 없습니다.');
+        return null;
+    }
+
+    let atrValues = [];
+    const atrMultiplier = 2 / (atrPeriod + 1);
+
+    // 첫 ATR 값은 ATR 기간 동안의 True Range의 단순 평균(SMA)입니다.
+    let firstAtrSum = 0;
+    for(let i = 0; i < atrPeriod; i++) {
+        firstAtrSum += trueRanges[i];
+    }
+    atrValues[atrPeriod - 1] = firstAtrSum / atrPeriod;
+
+    // 이후 ATR 값들은 표준 EMA 공식을 사용하여 계산합니다.
+    for (let i = atrPeriod; i < trueRanges.length; i++) {
+      atrValues[i] = (trueRanges[i] - atrValues[i - 1]) * atrMultiplier + atrValues[i - 1];
+    }
+
+    // 요청된 'when'에 해당하는 ATR 인덱스를 계산합니다.
+    // trueRanges는 candles보다 길이가 1 작고, atrValues[i]는 candles[i+1]에 해당합니다.
+    const atrIndex = candles.length - 1 - when - 1;
+
+    if (atrIndex < 0 || atrIndex >= atrValues.length || atrValues[atrIndex] === undefined) {
+        consoleLogger.error(`Keltner Channel ATR 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
+        return null;
+    }
+
+    const atr = atrValues[atrIndex];
+    
+    // 3. 상단 및 하단 채널 계산
+    const upper = middle + (atr * multiplier);
+    const lower = middle - (atr * multiplier);
+
+    return { upper, middle, lower };
+
+  } catch (error) {
+    consoleLogger.error('Keltner Channel 계산 중 오류 발생:', error);
+    return null;
+  }
+}
+
 
 module.exports = {
     calculateDMI,
     calculateBB,
     calculateEMA,
-    calculateAlligator
+    calculateAlligator,
+    calculateKeltnerChannel
 };
