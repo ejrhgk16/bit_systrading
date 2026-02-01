@@ -1,4 +1,4 @@
-const { consoleLogger } = require('./logger');
+import { consoleLogger } from './logger.js';
 
 /**
  * DMI와 ADX 지표를 계산합니다. (캔들 데이터 기반)
@@ -7,7 +7,7 @@ const { consoleLogger } = require('./logger');
  * @param {number} when - 0:당일 1:전날 2:이일전
  * @returns {{adx: number, pdi: number, mdi: number} | null} - ADX, +DI, -DI 값
  */
-function calculateDMI(candles, period, when) {
+export function calculateDMI(candles, period, when) {
   try {
     if (!candles || candles.length < period + when) { // Ensure enough data for smoothing
       consoleLogger.error('DMI 계산을 위한 충분한 K-line 데이터가 없습니다.');
@@ -133,7 +133,7 @@ function calculateDMI(candles, period, when) {
  * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
  * @returns {{upper: number, middle: number, lower: number} | null} - 볼린저 밴드 상단, 중간, 하단 값
  */
-function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
+export function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
   try {
     if (!candles || candles.length < period) { // Need at least 'period' candles to start
       consoleLogger.error('BB 계산을 위한 충분한 K-line 데이터가 없습니다.');
@@ -182,7 +182,7 @@ function calculateBB(candles, period = 20, multiplier = 2, when = 0) {
  * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
  * @returns {number | null} - EMA 값
  */
-function calculateEMA(candles, period, when = 0) {
+export function calculateEMA(candles, period, when = 0) {
   try {
     // 'period'개의 EMA를 계산하고, 'when'번째 전의 값을 보려면 최소 period + when 개의 데이터가 필요합니다.
     if (!candles || candles.length < period + when) {
@@ -232,7 +232,7 @@ function calculateEMA(candles, period, when = 0) {
  * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
  * @returns {{jaw: number, teeth: number, lips: number} | null} - Alligator 값
  */
-function calculateAlligator(candles, when = 0) {
+export function calculateAlligator(candles, when = 0) {
   try {
     const jawPeriod = 21;
     const teethPeriod = 13;
@@ -303,7 +303,7 @@ function calculateAlligator(candles, when = 0) {
  * @param {number} when - 0:현재 캔들, 1:이전 캔들.
  * @returns {{upper: number, middle: number, lower: number} | null} - Keltner Channel 값.
  */
-function calculateKeltnerChannel(candles, period = 20, atrPeriod = 10, multiplier = 2, when = 0) {
+export function calculateKeltnerChannel(candles, period = 20, atrPeriod = 10, multiplier = 2, when = 0) {
   try {
     const requiredCandleLength = Math.max(period + when, atrPeriod + when + 1);
     if (!candles || candles.length < requiredCandleLength) {
@@ -373,11 +373,61 @@ function calculateKeltnerChannel(candles, period = 20, atrPeriod = 10, multiplie
   }
 }
 
+/**
+ * RSI (Relative Strength Index)를 계산합니다.
+ * @param {Array} candles - K-line 데이터 배열. 오래된 데이터가 앞에 오도록 정렬되어 있어야 합니다.
+ * @param {number} period - 계산 기간 (일반적으로 14)
+ * @param {number} when - 0:현재 캔들 기준, 1:이전 캔들 기준
+ * @returns {number | null} - RSI 값
+ */
+export function calculateRSI(candles, period = 14, when = 0) {
+  try {
+    if (!candles || candles.length < period + 1 + when) {
+      consoleLogger.error(`RSI 계산을 위한 충분한 캔들 데이터가 없습니다. (필요: ${period + 1 + when}, 확보: ${candles.length})`);
+      return null;
+    }
 
-module.exports = {
-    calculateDMI,
-    calculateBB,
-    calculateEMA,
-    calculateAlligator,
-    calculateKeltnerChannel
-};
+    const closes = candles.map(c => parseFloat(c[4]));
+    let gains = [];
+    let losses = [];
+
+    for (let i = 1; i < closes.length; i++) {
+      const change = closes[i] - closes[i - 1];
+      if (change > 0) {
+        gains.push(change);
+        losses.push(0);
+      } else {
+        gains.push(0);
+        losses.push(Math.abs(change));
+      }
+    }
+
+    let avgGain = gains.slice(0, period).reduce((sum, val) => sum + val, 0) / period;
+    let avgLoss = losses.slice(0, period).reduce((sum, val) => sum + val, 0) / period;
+
+    let rsiValues = [];
+    // 첫 RSI 값 계산
+    let rs = avgLoss === 0 ? 100 : avgGain / avgLoss; // avgLoss가 0이면 RSI는 100
+    rsiValues.push(100 - (100 / (1 + rs)));
+
+    for (let i = period; i < gains.length; i++) {
+      avgGain = (avgGain * (period - 1) + gains[i]) / period;
+      avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+
+      rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      rsiValues.push(100 - (100 / (1 + rs)));
+    }
+
+    const resultIndex = rsiValues.length - 1 - when;
+    if (resultIndex < 0) {
+        consoleLogger.error(`RSI 계산 결과가 요청된 "when"(${when}) 값을 반환하기에 충분하지 않습니다.`);
+        return null;
+    }
+
+    return rsiValues[resultIndex];
+
+  } catch (error) {
+    consoleLogger.error('RSI 계산 중 오류 발생:', error);
+    return null;
+  }
+}

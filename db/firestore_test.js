@@ -1,6 +1,6 @@
-const { db } = require('./firebaseConfig.js');
-const { collection, addDoc, getDocs, query, where } = require('firebase/firestore');
-const { consoleLogger } = require('../common/logger.js');
+import { db } from './firebaseConfig.js';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { consoleLogger } from '../common/logger.js';
 
 // Firestore에 데이터를 추가하는 예제 함수
 async function addUser(name, email) {
@@ -75,3 +75,5 @@ async function main() {
 }
 
 main().catch(error => consoleLogger.error('Main test function failed:', error));
+
+export { addUser, getAllUsers, findUserByEmail };

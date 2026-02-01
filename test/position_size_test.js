@@ -1,7 +1,7 @@
 
-const alogo2 = require('../alogs/alog2Class.js');
-const { getKline } = require('../common/util.js');
-const { calculateAlligator } = require('../common/indicatior.js');
+import alogo2 from '../alogs_crypto/alog2Class.js';
+import { getKline } from '../common/util.js';
+import { calculateAlligator } from '../common/indicatior.js';
 
 async function test_calculatePositionSize() {
     // 1. Initialize

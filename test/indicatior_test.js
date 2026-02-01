@@ -1,5 +1,5 @@
-const { calculateDMI, calculateBB, calculateEMA, calculateAlligator, calculateKeltnerChannel } = require('../common/indicatior');
-const { getKline } = require('../common/util');
+import { calculateDMI, calculateBB, calculateEMA, calculateAlligator, calculateKeltnerChannel } from '../common/indicatior.js';
+import { getKline } from '../common/util.js';
 
 // 테스트 실행 함수
 async function runTest(testName, testFunction) {
@@ -29,25 +29,6 @@ async function main() {
     process.exit(1);
   }
   console.log(`데이터 ${klineData.length}개 수신 완료.`);
-
-  // // --- EMA 테스트 ---
-  // await runTest('calculateEMA - (period: 10, when: 0)', async () => {
-  //   const period = 10;
-  //   const when = 0;
-  //   const ema = calculateEMA(klineData, period, when);
-    
-  //   console.log(`  EMA (10, 1) Result: ${ema}`);
-  //   console.assert(typeof ema === 'number', 'EMA 결과는 숫자여야 합니다.');
-  // });
-
-  // await runTest('calculateEMA - (period: 5, when: 0)', async () => {
-  //   const period = 5;
-  //   const when = 0;
-  //   const ema = calculateEMA(klineData, period, when);
-    
-  //   console.log(`  EMA (5, 1) Result: ${ema}`);
-  //   console.assert(typeof ema === 'number', 'EMA 결과는 숫자여야 합니다.');
-  // });
 
   // --- BB 테스트 ---
   await runTest('calculateBB - (period: 20, multiplier: 1, when: 1)', async () => {

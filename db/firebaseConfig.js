@@ -1,8 +1,9 @@
-require('dotenv').config({ override: true });
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 // Import the functions you need from the SDKs you need
-const { initializeApp } = require("firebase/app");
-const { getFirestore } = require("firebase/firestore");
-const { getAuth } = require("firebase/auth"); // Firebase Auth 임포트 추가
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // Firebase Auth 임포트 추가
 
 // TODO: Add your own Firebase configuration here
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -26,4 +27,4 @@ const db = getFirestore(app);
 const auth = getAuth(app); // auth 객체 초기화 추가
 
 // db와 auth를 함께 내보내기
-module.exports = { db, auth };
+export { db, auth };

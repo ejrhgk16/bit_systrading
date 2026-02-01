@@ -1,12 +1,13 @@
 
-require('dotenv').config({ override: true });
-const { signInWithEmailAndPassword } = require("firebase/auth");
-const { auth } = require('../db/firebaseConfig.js');
-const { ws_client } = require('../common/client');
-const { consoleLogger } = require('../common/logger.js');
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from '../db/firebaseConfig.js';
+import { ws_client } from '../common/client.js';
+import { consoleLogger } from '../common/logger.js';
+import alogo2 from '../alogs_crypto/alog2Class.js';
 
 // --- Mocking Section ---
-// 시세 데이터(getKline)만 가짜 함수로 대체하여 진입 조건을 강제로 만듭니다.
 const mockUtil = {
   getKline: (symbol, interval, limit) => {
     consoleLogger.debug(`[Mock Data] getKline called for ${symbol}. 진입 조건을 강제하기 위해 조작된 데이터를 반환합니다.`);
@@ -24,14 +25,9 @@ const mockUtil = {
   }
 };
 
-// alogo2Class가 require하는 모듈 중 getKline만 Mock으로 교체합니다.
-// ws_client는 실제 객체를 그대로 사용합니다.
-require.cache[require.resolve('../common/util')] = { exports: { getKline: mockUtil.getKline } };
-
-// alogo2Class는 Mocking 설정 후에 require해야 합니다.
-const alogo2 = require('../alogs/alog2Class.js');
-
 // --- Test Runner Section ---
+
+alogo2.prototype.getKline = mockUtil.getKline;
 
 async function runHybridTestScenario() {
   consoleLogger.info('--- Algo2 Hybrid Test Start ---');

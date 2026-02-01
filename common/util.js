@@ -1,7 +1,12 @@
-const {rest_client} = require('./client');
-const { consoleLogger } = require('./logger');
+import { config } from 'dotenv';
+import YahooFinance from 'yahoo-finance2';
+import {rest_client} from './client.js';
+import { consoleLogger } from './logger.js';
+const yahooFinance = new YahooFinance();
 
-async function getWeeklyOpen(symbol){
+config();
+
+export async function getWeeklyOpen(symbol){
     try {
       const response = await rest_client.getKline({
         category: 'linear',
@@ -32,7 +37,7 @@ async function getWeeklyOpen(symbol){
   
   }
   
-  async function getWeeklyMovingAverage(symbol, limit) {
+  export async function getWeeklyMovingAverage(symbol, limit) {
     try {
       consoleLogger.info('Fetching weekly kline data for moving average...');
   
@@ -73,7 +78,7 @@ async function getWeeklyOpen(symbol){
     }
   }
   
-  async function getWeeklyOpenCloseDifference(symbol, limit) {
+  export async function getWeeklyOpenCloseDifference(symbol, limit) {
     try {
       consoleLogger.info('Fetching weekly kline data for moving average...');
   
@@ -117,7 +122,7 @@ async function getWeeklyOpen(symbol){
    * @param {number} weekOffset - 0: 이번 주, 1: 다음 주, 2: 다다음 주, ...
    * @returns {string} - 예: '13SEP24'
    */
-  function getFridayFormatted(weekOffset = 0) {
+  export function getFridayFormatted(weekOffset = 0) {
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
   
@@ -153,7 +158,7 @@ async function getWeeklyOpen(symbol){
    * @param {string} expirationDate - 예: '13SEP24'
    * @returns {Promise<number[] | null>} - 정렬된 행사가 목록 또는 null
    */
-  async function getStrikes(baseCoin, expirationDate) {
+  export async function getStrikes(baseCoin, expirationDate) {
       try {
           consoleLogger.info(`${baseCoin}-${expirationDate} 만기일의 행사가를 조회합니다...`);
           const response = await rest_client.getTickers({
@@ -196,7 +201,7 @@ async function getWeeklyOpen(symbol){
    * @param {number[]} strikePrices - 전체 행사가 목록.
    * @returns {number | null} - 가장 가까운 행사가. 행사가 목록이 비어있으면 null을 반환합니다.
    */
-  function findClosestStrike(targetPrice, strikePrices) {
+  export function findClosestStrike(targetPrice, strikePrices) {
     if (!strikePrices || strikePrices.length === 0) {
       consoleLogger.error("행사가 목록(strikePrices)이 비어있습니다.");
       return null;
@@ -217,7 +222,7 @@ async function getWeeklyOpen(symbol){
  * @param {number} limit - 가져올 캔들 수
  * @returns {Promise<Array|null>} - 캔들 데이터 배열 (오래된 순) 또는 실패 시 null
  */
-async function getKline(symbol, interval, limit) {
+export async function getKline(symbol, interval, limit) {
   try {
     const response = await rest_client.getKline({
       category: 'linear',
@@ -238,12 +243,73 @@ async function getKline(symbol, interval, limit) {
   }
 }
 
-module.exports = {
-    getKline,
-    getWeeklyOpen,
-    getWeeklyMovingAverage,
-    getWeeklyOpenCloseDifference,
-    getFridayFormatted,
-    getStrikes,
-    findClosestStrike,
-};
+
+/**
+ * Sends a message to a Telegram channel.
+ * @param {string} text - The message text to send.
+ * @returns {Promise<object>} - The response from the Telegram API.
+ */
+export async function sendTelegram(text) {
+  const url = `https://api.telegram.org/bot${process.env.telegram_bot_id}/sendMessage`;
+  const postData = {
+    chat_id: process.env.telegram_channel_id,
+    text: text,
+    parse_mode: 'Markdown' // To format the message using backticks
+  };
+  const postOptions = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  };
+
+  console.log('Sending message to Telegram...');
+  try {
+    const response = await fetch(url, postOptions);
+    const data = await response.json();
+    console.log('Telegram response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error sending Telegram message:', error);
+    throw error;
+  }
+}
+
+/**
+ * Formats a message from a data object into a Markdown code block.
+ * @param {object} data - The data object to format.
+ * @param {string} [title='Data'] - A title for the message.
+ * @returns {string} - The formatted message string.
+ */
+export function setMsgFormat(data, title = 'Data') {
+  const jsonString = JSON.stringify(data, null, 2);
+  return `*${title}*\n\`\`\`\n${jsonString}\n\`\`\``;
+}
+
+export async function getCandles_yahoo(symbol, days_ago) {
+    const queryOptions = {
+        period1: new Date(new Date().setDate(new Date().getDate() - days_ago)),
+        period2: new Date(),
+        interval: '1d',
+    };
+
+    try {
+        const results = await yahooFinance.historical(symbol, queryOptions);
+
+        // indicatior 함수들이 요구하는 배열 형식으로 데이터를 변환합니다.
+        // [timestamp, open, high, low, close, volume]
+        const candles = results.map(r => [
+            r.date.getTime(),
+            r.open,
+            r.high,
+            r.low,
+            r.close,
+            r.volume
+        ]);
+        return candles;
+    } catch (error) {
+        console.error('Error fetching data from Yahoo Finance:', error);
+        throw error;
+    }
+}

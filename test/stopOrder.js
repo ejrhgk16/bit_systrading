@@ -1,4 +1,4 @@
-const { ws_client, WS_KEY_MAP } = require("../common/client");
+import { ws_client, WS_KEY_MAP } from "../common/client.js";
 
 const exit1Params = {
     category: "linear",
@@ -30,4 +30,4 @@ const exit1Params2 = {
     timeInForce: "GoodTillCancel"
 };
 
-ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params2)
+ws_client.sendWSAPIRequest(WS_KEY_MAP.v5PrivateTrade, 'order.create', exit1Params2);

@@ -1,13 +1,14 @@
 
 //전략 : 변동성(볼밴)
-const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('../common/client');
-const {calculateDMI, calculateBB, calculateEMA, calculateAlligator} = require('../common/indicatior');
-const {getKline} = require('../common/util');
-require('dotenv').config({ override: true });
-const {getTradeStatus, setTradeStatus, addTradeLog } = require('../db/firestoreFunc.js');
-const {fileLogger, consoleLogger} = require('../common/logger')
+import {rest_client, ws_client, ws_api_client, WS_KEY_MAP} from '../common/client.js';
+import {calculateDMI, calculateBB, calculateEMA, calculateAlligator} from '../common/indicatior.js';
+import {getKline, setMsgFormat, sendTelegram} from '../common/util.js';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+import {getTradeStatus, setTradeStatus, addTradeLog } from '../db/firestoreFunc.js';
+import {fileLogger, consoleLogger} from '../common/logger.js';
 
-class alogo2{
+export default class alogo2{
 
     constructor(symbol, std = 2) {
 
@@ -444,6 +445,16 @@ class alogo2{
         const alog2State = { ...this };
         setTradeStatus(docId, alog2State)
 
+        const msg = {
+            orderLinkId : dataObj?.orderLinkId,
+            side : dataObj?.side,
+            closedPnl : dataObj?.closedPnl,
+
+        }
+
+        const msgText = setMsgFormat(msg, this.name)
+        sendTelegram(msgText)
+
         
     }
 
@@ -566,5 +577,3 @@ class alogo2{
     }
 
 }
-
-module.exports = alogo2

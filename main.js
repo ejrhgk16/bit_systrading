@@ -1,13 +1,15 @@
-require('dotenv').config({ override: true });
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 
-const {rest_client, ws_client, ws_api_client, WS_KEY_MAP} = require('./common/client');
-const { v4: uuidv4 } = require('uuid');
-const alogo2 = require('./alogs/alog2Class.js');
-const { fileLogger, consoleLogger } = require('./common/logger.js'); // 로거 import
-const cron = require('node-cron');
+import {rest_client, ws_client, ws_api_client, WS_KEY_MAP} from './common/client.js';
+import { v4 as uuidv4 } from 'uuid';
+import alogo2 from './alogs_crypto/alog2Class.js';
+import { fileLogger, consoleLogger } from './common/logger.js'; // 로거 import
+import cron from 'node-cron';
+import { getSpxVixData } from './alogs_finance/alog1Class_spx_vix.js';
 
-const { auth } = require('./db/firebaseConfig.js');
-const { signInWithEmailAndPassword } = require("firebase/auth");
+import { auth } from './db/firebaseConfig.js';
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 
 const symbols = ['BTCUSDT', 'ETHUSDT'];//, 'SOLUSDT'
@@ -79,6 +81,32 @@ async function main(){//웹소켓 셋 및 스케줄링
             console.log(" ");
         });
 
+  }, {
+    timezone: 'UTC'
+  });
+
+  cron.schedule('30 21 * * *', () => {
+    consoleLogger.info('매일 21시 30분(UTC) 작업 실행: getSpxVixData');
+  
+    const spxVixTask = getSpxVixData();
+  
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`getSpxVixData 작업 시간 초과! (${CRON_JOB_TIMEOUT_MS / 1000}초 이상 실행됨)`));
+      }, CRON_JOB_TIMEOUT_MS);
+    });
+  
+    Promise.race([spxVixTask, timeoutPromise])
+      .then(() => {
+        consoleLogger.info('getSpxVixData 작업 완료');
+      })
+      .catch(error => {
+        consoleLogger.error('getSpxVixData 작업 오류 발생:', error);
+        fileLogger.error('getSpxVixData 작업 오류 발생:', error);
+      })
+      .finally(() => {
+        console.log(" ");
+      });
   }, {
     timezone: 'UTC'
   });

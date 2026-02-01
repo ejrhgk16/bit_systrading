@@ -1,6 +1,6 @@
-const winston = require('winston');
-const path = require('path');
-const { inspect } = require('util');
+import winston from 'winston';
+import path from 'path';
+import { inspect } from 'util';
 
 // 현재 날짜를 'YYYY-MM-DD' 형식으로 반환하는 함수
 function getTodayDate() {
@@ -87,4 +87,4 @@ Object.keys(customLevels.levels).forEach(level => {
 });
 
 
-module.exports = { fileLogger, consoleLogger };
+export { fileLogger, consoleLogger };

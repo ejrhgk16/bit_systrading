@@ -1,8 +1,6 @@
-
-const { db } = require('./firebaseConfig.js');
-// getDoc, setDoc 추가 및 serverTimestamp를 require로 변경
-const { collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp } = require('firebase/firestore');
-const { consoleLogger } = require('../common/logger.js');
+import { db } from './firebaseConfig.js';
+import { collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { consoleLogger } from '../common/logger.js';
 
 async function getTradeStatus(docId){
     try {
@@ -68,4 +66,4 @@ async function addTradeLog(parentDocId, data) {
     }
 }
 
-module.exports = { getTradeStatus, setTradeStatus, addTradeLog };
+export { getTradeStatus, setTradeStatus, addTradeLog };

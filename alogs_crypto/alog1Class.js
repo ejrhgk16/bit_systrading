@@ -1,9 +1,8 @@
 //전략 : dmi(추세판별) + 볼밴(진입)
-const {client, ws} = require('../common/client');
-const {calculateDMI, calculateBB} = require('../common/indicatior');
-const Status = require('../common/statusClass');
+import {client, ws} from '../common/client.js';
+import {calculateDMI, calculateBB} from '../common/indicatior.js';
 
-class alogo1{
+export default class alogo1{
 
     constructor(symbol) {
 
