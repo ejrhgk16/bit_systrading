@@ -25,7 +25,7 @@ export async function getSpxVixData() {
     }
     const msg = util.setMsgFormat(result, 'SPX_VIX')
     util.sendTelegram(msg)
-    console.log(result);
+
     return result;
 
   } catch (error) {

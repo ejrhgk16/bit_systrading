@@ -2,6 +2,8 @@ import { config } from 'dotenv';
 import YahooFinance from 'yahoo-finance2';
 import {rest_client} from './client.js';
 import { consoleLogger } from './logger.js';
+import axios from 'axios';
+
 const yahooFinance = new YahooFinance();
 
 config();
@@ -254,31 +256,22 @@ export async function sendTelegram(text) {
   const postData = {
     chat_id: process.env.telegram_channel_id,
     text: text,
-    parse_mode: 'Markdown' // To format the message using backticks
-  };
-  const postOptions = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(postData),
+    parse_mode: 'Markdown'
   };
 
   console.log('Sending message to Telegram...');
   try {
-    const response = await fetch(url, postOptions);
-    const data = await response.json();
-    console.log('Telegram response:', data);
-    return data;
+    const response = await axios.post(url, postData);
+    console.log('Telegram response:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error sending Telegram message:', error);
+    console.error('Error sending Telegram message:', error.response ? error.response.data : error.message);
     throw error;
   }
 }
 
 /**
  * Formats a message from a data object into a Markdown code block.
- * @param {object} data - The data object to format.
  * @param {string} [title='Data'] - A title for the message.
  * @returns {string} - The formatted message string.
  */
