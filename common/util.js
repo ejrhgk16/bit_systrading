@@ -270,8 +270,8 @@ export async function sendTelegram(text) {
     console.log('Telegram response:', response.data);
     return response.data;
   } catch (error) {
-    // console.error('Error sending Telegram message:', error.response ? error.response.data : error.message);
-    // throw error;
+    console.error('Error sending Telegram message:', error.response ? error.response.data : error.message);
+    throw error;
   }
 }
 
