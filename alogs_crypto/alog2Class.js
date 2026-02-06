@@ -1,10 +1,12 @@
 
 //전략 : 변동성(볼밴)
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+
 import {rest_client, ws_client, ws_api_client, WS_KEY_MAP} from '../common/client.js';
 import {calculateDMI, calculateBB, calculateEMA, calculateAlligator} from '../common/indicatior.js';
 import {getKline, setMsgFormat, sendTelegram} from '../common/util.js';
-import dotenv from 'dotenv';
-dotenv.config({ override: true });
+
 import {getTradeStatus, setTradeStatus, addTradeLog } from '../db/firestoreFunc.js';
 import {fileLogger, consoleLogger} from '../common/logger.js';
 

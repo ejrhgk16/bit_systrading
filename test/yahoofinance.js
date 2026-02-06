@@ -1,5 +1,4 @@
 // 1. 다른 어떤 import보다도 "최상단"에 위치해야 합니다.
-import 'dotenv/config';
 import YahooFinance from 'yahoo-finance2';
 import { sendTelegram, setMsgFormat } from '../common/util.js';
 import { calculateRSI } from '../common/indicatior.js';

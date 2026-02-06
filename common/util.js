@@ -1,5 +1,4 @@
 //코드가 실행되자마자 가장 먼저 환경 변수를 로드합니다.
-import 'dotenv/config';
 import dotenv from 'dotenv';
 dotenv.config({ override: true });
 import YahooFinance from 'yahoo-finance2';
@@ -260,9 +259,6 @@ export async function sendTelegram(text) {
     text: text,
     parse_mode: 'Markdown'
   };
-  console.log("env", process.env.env_ver)
-  consoleLogger.info("env_version : ", process.env.env_ver)
-  console.log(process.env.telegram_bot_id)
 
   console.log('Sending message to Telegram...');
   try {
