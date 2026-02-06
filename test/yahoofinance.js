@@ -4,7 +4,7 @@ import { calculateRSI } from '../common/indicatior.js';
 
 const yahooFinance = new YahooFinance();
 
-const main = async () => {
+const main23 = async () => {
   // RSI 계산을 위해 충분한 데이터를 가져오도록 기간을 30일로 설정
   const queryOptions = {
     period1: new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -49,4 +49,4 @@ const main = async () => {
   }
 };
 
-main();
+main23();
