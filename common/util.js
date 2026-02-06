@@ -1,4 +1,5 @@
-import { config } from 'dotenv';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 import YahooFinance from 'yahoo-finance2';
 import {rest_client} from './client.js';
 import { consoleLogger } from './logger.js';
@@ -6,7 +7,6 @@ import axios from 'axios';
 
 const yahooFinance = new YahooFinance();
 
-config();
 
 export async function getWeeklyOpen(symbol){
     try {
