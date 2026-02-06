@@ -1,3 +1,5 @@
+//코드가 실행되자마자 가장 먼저 환경 변수를 로드합니다.
+import 'dotenv/config';
 import dotenv from 'dotenv';
 dotenv.config({ override: true });
 import YahooFinance from 'yahoo-finance2';
