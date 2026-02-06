@@ -266,7 +266,11 @@ export async function sendTelegram(text) {
 
   console.log('Sending message to Telegram...');
   try {
-    const response = await axios.post(url, postData);
+    const response = await axios.post(url, postData , {
+      // 🔥 이 부분이 핵심입니다! IPv4를 우선적으로 사용하도록 강제함
+      family: 4, 
+      timeout: 5000 // 5초 타임아웃 추가
+  });
     console.log('Telegram response:', response.data);
     return response.data;
   } catch (error) {
