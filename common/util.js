@@ -258,6 +258,7 @@ export async function sendTelegram(text) {
     text: text,
     parse_mode: 'Markdown'
   };
+  console.log(process.env.telegram_bot_id)
 
   console.log('Sending message to Telegram...');
   try {
@@ -265,8 +266,8 @@ export async function sendTelegram(text) {
     console.log('Telegram response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error sending Telegram message:', error.response ? error.response.data : error.message);
-    throw error;
+    // console.error('Error sending Telegram message:', error.response ? error.response.data : error.message);
+    // throw error;
   }
 }
 
