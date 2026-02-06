@@ -258,6 +258,7 @@ export async function sendTelegram(text) {
     text: text,
     parse_mode: 'Markdown'
   };
+  console.log("env", process.env.env_ver)
   console.log(process.env.telegram_bot_id)
 
   console.log('Sending message to Telegram...');
